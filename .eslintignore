@@ -1,0 +1,8 @@
+assets/js/vendor
+assets/js/admin/vendor
+assets/js/frontend/vendor
+tests
+dist/
+build/
+node_modules/
+*.min.js

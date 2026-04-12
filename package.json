@@ -1,0 +1,21 @@
+{
+  "name": "wp-rest-api-playground",
+  "version": "1.0.0",
+  "description": "WordPress REST API Playground plugin",
+  "scripts": {
+    "start": "10up-toolkit start",
+    "build": "10up-toolkit build",
+    "lint:js": "10up-toolkit lint-js",
+    "lint:css": "10up-toolkit lint-style"
+  },
+  "devDependencies": {
+	"10up-toolkit": "6.5.1",
+    "prettier": "3.6.2",
+	"webpack": "5.103.0"
+  },
+  "10up-toolkit": {
+    "entry": {
+      "rest-playground": "./assets/js/rest-playground.js"
+    }
+  }
+}
