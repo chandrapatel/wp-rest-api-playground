@@ -14,14 +14,14 @@ WP REST API Playground provides a developer-friendly interface accessible at `/r
 - **Method tabs** — switch between GET, POST, PUT, PATCH, and DELETE for any route that supports multiple methods.
 - **Schema-driven form fields** — path parameters, query parameters, and request body fields are rendered from the endpoint's registered schema, including type hints, descriptions, required markers, default values, enum dropdowns, and numeric min/max constraints.
 - **Form/Raw JSON tabs** — switch between a guided form and a raw JSON textarea for POST/PUT/PATCH requests; the raw textarea also appears when no schema is available.
-- **Application Password authentication** — enter a username and Application Password once; credentials are saved to `localStorage` and sent as a `Basic` Authorization header on every authenticated request. Every request also includes the WordPress nonce (`X-WP-Nonce`) for cookie-based sessions.
+- **Application Password authentication** — enter a username and Application Password once; credentials are saved to `sessionStorage` (cleared when the tab closes) and sent as a `Basic` Authorization header on every authenticated request. Every request also includes the WordPress nonce (`X-WP-Nonce`) for cookie-based sessions.
 - **Welcome screen** — a getting-started view with tips is shown before any endpoint is selected.
 - **Loading states** — a spinner appears while the endpoint list loads; the Send button shows "Sending…" and is disabled during an in-flight request.
 - **Syntax-highlighted response** — JSON responses are displayed with colour-coded keys, strings, numbers, booleans, and nulls. Non-JSON responses are shown as plain text.
 - **Response headers tab** — inspect the full set of response headers alongside the body.
 - **Copy to clipboard** — copy the formatted response body with one click.
 - **Timing indicator** — each request shows its round-trip duration in milliseconds.
-- **Administrator-only access** — the playground page is restricted to logged-in users with the `administrator` capability; all other visitors receive a 403 response.
+- **Administrator-only access** — the playground page is restricted to users with the `manage_options` capability; all other visitors receive a 403 response.
 
 ## Requirements
 
@@ -66,7 +66,7 @@ Many endpoints (creating posts, accessing user data, changing settings) require 
 3. Enter your **Username** and the generated **Application Password**.
 4. Click **Save**.
 
-Credentials are stored in the browser's `localStorage` and are sent automatically with every subsequent request. Click **Clear** to remove them.
+Credentials are stored in the browser's `sessionStorage` and are sent automatically with every subsequent request. They are cleared automatically when the tab or browser window closes. Click **Clear** to remove them immediately.
 
 ## Development
 
@@ -126,17 +126,19 @@ wp-rest-api-playground/
 
 ### How the endpoint list works
 
-`REST_Controller` hooks into `rest_api_init` and registers a public endpoint at:
+`REST_Controller` hooks into `rest_api_init` and registers an administrator-only endpoint at:
 
 ```
 GET /wp-json/rest-playground/v1/routes
 ```
 
-It calls `rest_get_server()->get_routes()` to retrieve every registered route, normalises their argument schemas (preserving `type`, `description`, `required`, `default`, `enum`, `minimum`, `maximum`, and `items`), and groups them into human-readable categories sorted alphabetically. The frontend fetches this endpoint on page load.
+It calls `rest_get_server()->get_routes()` to retrieve every registered route, normalises their argument schemas (preserving `type`, `description`, `required`, `default`, `enum`, `minimum`, `maximum`, and `items`), and groups them into human-readable categories sorted alphabetically. The frontend fetches this endpoint on page load using the WordPress nonce for authentication.
 
 ### Access control
 
-The playground page (`Page.php`) checks `is_user_logged_in()` and `current_user_can('administrator')` before rendering. Any visitor who does not meet both conditions receives a WordPress 403 error page. The page template also sets `noindex, nofollow` so search engines ignore it.
+The playground page (`Page.php`) checks `current_user_can('manage_options')` before rendering. Any visitor who does not meet this condition receives a WordPress 403 error page. The page template also sets `noindex, nofollow` so search engines ignore it.
+
+The `/wp-json/rest-playground/v1/routes` endpoint enforces the same `manage_options` capability check, so the route list is never exposed to unauthenticated or non-admin visitors.
 
 ### Building assets
 
@@ -148,7 +150,7 @@ Assets are compiled by [10up-toolkit](https://github.com/10up/10up-toolkit). The
 Go to **Settings → Permalinks** and save. This flushes WordPress rewrite rules and registers the `/rest-api-playground/` slug. Plugin activation also flushes rules automatically, so deactivating and reactivating the plugin is another option.
 
 **The page shows a 403 "Access Denied" error.**
-The playground is restricted to logged-in administrators. Log in to WordPress with an account that has the `administrator` role before visiting the playground URL.
+The playground is restricted to users with the `manage_options` capability (administrators by default). Log in to WordPress with an administrator account before visiting the playground URL.
 
 **Authenticated requests return 401.**
 Make sure you are using an Application Password (not your login password). Application Passwords are generated under **Users → Profile** and require WordPress 5.6 or higher.
@@ -171,9 +173,9 @@ This plugin was developed with the assistance of [Claude](https://claude.ai) (An
 ### 1.0.0
 - Three-panel layout with endpoint browser, request builder, and response viewer.
 - Full endpoint discovery grouped by resource category.
-- Application Password authentication with `localStorage` persistence.
+- Application Password authentication with `sessionStorage` persistence (cleared on tab close).
 - Schema-driven form fields with syntax-highlighted response output.
-- Administrator-only access restriction (logged-in users with the `administrator` capability).
+- Administrator-only access restriction (`manage_options` capability required for both the page and the routes API endpoint).
 - Welcome screen shown before an endpoint is selected.
 - Loading spinner while the endpoint list and requests are in flight.
 - Self-hosted Fira Sans and Fira Mono fonts.

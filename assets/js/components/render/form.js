@@ -3,7 +3,7 @@
  */
 
 import { state } from '../state';
-import { extractPathParams, prettifyRoute } from '../utils';
+import { escapeHtml, extractPathParams, prettifyRoute } from '../utils';
 import { renderField } from './fields';
 
 /**
@@ -124,12 +124,12 @@ export const renderEndpointPanel = (endpoint, method) => {
 			.map(
 				(m) => `
 				<button
-					class="rest-playground__method-tab rest-playground__method-tab--${m.toLowerCase()}${m === method ? ' is-active' : ''}"
-					data-method="${m}"
+					class="rest-playground__method-tab rest-playground__method-tab--${escapeHtml(m.toLowerCase())}${m === method ? ' is-active' : ''}"
+					data-method="${escapeHtml(m)}"
 					type="button"
 					role="tab"
 					aria-selected="${m === method}"
-				>${m}</button>
+				>${escapeHtml(m)}</button>
 			`,
 			)
 			.join('');

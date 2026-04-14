@@ -53,7 +53,7 @@ class Page {
 			return;
 		}
 
-		if ( ! is_user_logged_in() || ! current_user_can( 'administrator' ) ) {
+		if ( ! current_user_can( 'manage_options' ) ) {
 			wp_die(
 				esc_html__( 'You do not have permission to access this page.', 'wp-rest-api-playground' ),
 				esc_html__( 'Access Denied', 'wp-rest-api-playground' ),

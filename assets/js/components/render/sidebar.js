@@ -72,7 +72,7 @@ export const renderSidebar = (routes) => {
 					const badges = methods
 						.map(
 							(m) =>
-								`<span class="rest-playground__badge rest-playground__badge--${m.toLowerCase()}">${m}</span>`,
+								`<span class="rest-playground__badge rest-playground__badge--${escapeHtml(m.toLowerCase())}">${escapeHtml(m)}</span>`,
 						)
 						.join('');
 					const path = prettifyRoute(endpoint.route);

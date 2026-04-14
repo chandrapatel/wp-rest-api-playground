@@ -32,7 +32,7 @@ class REST_Controller {
 			[
 				'methods'             => \WP_REST_Server::READABLE,
 				'callback'            => [ $this, 'get_routes' ],
-				'permission_callback' => '__return_true',
+				'permission_callback' => static fn() => current_user_can( 'manage_options' ),
 			]
 		);
 	}

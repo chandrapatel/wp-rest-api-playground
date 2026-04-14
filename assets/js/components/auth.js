@@ -36,7 +36,7 @@ export const updateAuthStatus = () => {
 
 export const loadAuthFromStorage = () => {
 	try {
-		const stored = localStorage.getItem('wp-rest-playground-auth');
+		const stored = sessionStorage.getItem('wp-rest-playground-auth');
 		if (stored) {
 			state.auth = JSON.parse(stored);
 		}
@@ -50,7 +50,7 @@ export const saveAuth = () => {
 	const password = document.getElementById('auth-password')?.value.trim() ?? '';
 	state.auth = { username, password };
 	try {
-		localStorage.setItem('wp-rest-playground-auth', JSON.stringify(state.auth));
+		sessionStorage.setItem('wp-rest-playground-auth', JSON.stringify(state.auth));
 	} catch {
 		// ignore
 	}
@@ -60,7 +60,7 @@ export const saveAuth = () => {
 
 export const clearAuth = () => {
 	state.auth = { username: '', password: '' };
-	localStorage.removeItem('wp-rest-playground-auth');
+	sessionStorage.removeItem('wp-rest-playground-auth');
 	const userEl = document.getElementById('auth-username');
 	const passEl = document.getElementById('auth-password');
 	if (userEl) userEl.value = '';
