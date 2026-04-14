@@ -1,0 +1,179 @@
+/* ==========================================================================
+   Sidebar — shell, brand, authentication form, and search input.
+   ========================================================================== */
+
+.rest-playground__sidebar {
+	background: var(--rest-playground-chrome-bg);
+	border-right: 1px solid var(--rest-playground-chrome-border);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.rest-playground__sidebar-header {
+	border-bottom: 1px solid var(--rest-playground-chrome-border);
+	flex-shrink: 0;
+	padding: 16px;
+}
+
+/* Brand */
+.rest-playground__brand {
+	align-items: center;
+	color: var(--rest-playground-chrome-text);
+	display: flex;
+	font-size: var(--rest-playground-font-md);
+	font-weight: 600;
+	gap: 8px;
+	letter-spacing: 0.01em;
+}
+
+.rest-playground__brand-icon {
+	color: var(--rest-playground-accent);
+	flex-shrink: 0;
+	height: 20px;
+	width: 20px;
+}
+
+/* Authentication toggle */
+.rest-playground__auth {
+	border-bottom: 1px solid var(--rest-playground-chrome-border);
+	flex-shrink: 0;
+}
+
+.rest-playground__auth-toggle {
+	align-items: center;
+	background: none;
+	border: none;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	font-size: var(--rest-playground-font-base);
+	gap: 8px;
+	padding: 10px 16px;
+	text-align: left;
+	transition: background 0.15s, color 0.15s;
+	width: 100%;
+}
+
+.rest-playground__auth-toggle:hover {
+	background: var(--rest-playground-chrome-hover);
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__auth-toggle.is-authenticated {
+	color: var(--rest-playground-success);
+}
+
+.rest-playground__auth-icon {
+	flex-shrink: 0;
+	height: 14px;
+	width: 14px;
+}
+
+.rest-playground__auth-status {
+	flex: 1;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rest-playground__auth-chevron {
+	flex-shrink: 0;
+	height: 14px;
+	transition: transform 0.2s;
+	width: 14px;
+}
+
+.rest-playground__auth-toggle[aria-expanded="true"] .rest-playground__auth-chevron {
+	transform: rotate(180deg);
+}
+
+.rest-playground__auth-form {
+	background: var(--rest-playground-chrome-surface);
+	border-top: 1px solid var(--rest-playground-chrome-border);
+	padding: 12px 16px 16px;
+}
+
+.rest-playground__auth-help {
+	color: var(--rest-playground-chrome-muted);
+	font-size: var(--rest-playground-font-sm);
+	line-height: 1.6;
+	margin: 0 0 12px;
+}
+
+.rest-playground__field-label {
+	color: var(--rest-playground-chrome-muted);
+	display: block;
+	font-size: var(--rest-playground-font-sm);
+	font-weight: 600;
+	letter-spacing: 0.05em;
+	margin-bottom: 4px;
+	text-transform: uppercase;
+}
+
+.rest-playground__text-input {
+	background: var(--rest-playground-chrome-bg);
+	border: 1px solid var(--rest-playground-chrome-border);
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-chrome-text);
+	display: block;
+	font-family: inherit;
+	font-size: var(--rest-playground-font-md);
+	margin-bottom: 10px;
+	outline: none;
+	padding: 7px 10px;
+	transition: border-color 0.15s;
+	width: 100%;
+}
+
+.rest-playground__text-input:focus {
+	border-color: var(--rest-playground-accent);
+	box-shadow: 0 0 0 3px var(--rest-playground-accent-light);
+}
+
+.rest-playground__auth-actions {
+	display: flex;
+	gap: 8px;
+	margin-top: 4px;
+}
+
+/* Search */
+.rest-playground__search {
+	border-bottom: 1px solid var(--rest-playground-chrome-border);
+	flex-shrink: 0;
+	padding: 10px 16px;
+	position: relative;
+}
+
+.rest-playground__search-icon {
+	color: var(--rest-playground-chrome-muted);
+	height: 14px;
+	left: 26px;
+	pointer-events: none;
+	position: absolute;
+	top: 50%;
+	transform: translateY(-50%);
+	width: 14px;
+}
+
+.rest-playground__search-input {
+	background: var(--rest-playground-chrome-surface);
+	border: 1px solid var(--rest-playground-chrome-border);
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-chrome-text);
+	font-family: inherit;
+	font-size: var(--rest-playground-font-md);
+	outline: none;
+	padding: 7px 10px 7px 32px;
+	transition: border-color 0.15s;
+	width: 100%;
+}
+
+.rest-playground__search-input:focus {
+	border-color: var(--rest-playground-accent);
+}
+
+.rest-playground__search-input::placeholder {
+	color: var(--rest-playground-chrome-muted);
+}

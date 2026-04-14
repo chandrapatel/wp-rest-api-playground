@@ -1,0 +1,38 @@
+/* ==========================================================================
+   Buttons — reusable .rest-playground__btn variants.
+   ========================================================================== */
+
+.rest-playground__btn {
+	align-items: center;
+	border: 1px solid transparent;
+	border-radius: var(--rest-playground-radius);
+	cursor: pointer;
+	display: inline-flex;
+	font-size: var(--rest-playground-font-base);
+	font-weight: 600;
+	justify-content: center;
+	padding: 6px 14px;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.rest-playground__btn--primary {
+	background: var(--rest-playground-accent);
+	border-color: var(--rest-playground-accent);
+	color: var(--rest-playground-white);
+}
+
+.rest-playground__btn--primary:hover {
+	background: var(--rest-playground-accent-hover);
+	border-color: var(--rest-playground-accent-hover);
+}
+
+.rest-playground__btn--ghost {
+	background: transparent;
+	border-color: var(--rest-playground-chrome-border);
+	color: var(--rest-playground-chrome-muted);
+}
+
+.rest-playground__btn--ghost:hover {
+	background: var(--rest-playground-chrome-hover);
+	color: var(--rest-playground-chrome-text);
+}

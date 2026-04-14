@@ -1,0 +1,15 @@
+/* ==========================================================================
+   WP REST API Playground — Stylesheet entry point.
+   Compiled by 10up-toolkit. Source: assets/css/rest-playground.css
+   ========================================================================== */
+
+@import "./components/fonts.css";
+@import "./components/variables.css";
+@import "./components/base.css";
+@import "./components/sidebar.css";
+@import "./components/navigation.css";
+@import "./components/main-panel.css";
+@import "./components/request-form.css";
+@import "./components/buttons.css";
+@import "./components/response-panel.css";
+@import "./components/utilities.css";

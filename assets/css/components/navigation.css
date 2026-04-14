@@ -1,0 +1,177 @@
+/* ==========================================================================
+   Navigation — scrollable nav area, category accordions, route items, method badges.
+   ========================================================================== */
+
+.rest-playground__nav {
+	flex: 1;
+	min-height: 0;
+	overflow-y: auto;
+	padding: 8px 0;
+}
+
+.rest-playground__nav::-webkit-scrollbar {
+	width: 5px;
+}
+
+.rest-playground__nav::-webkit-scrollbar-track {
+	background: transparent;
+}
+
+.rest-playground__nav::-webkit-scrollbar-thumb {
+	background: var(--rest-playground-chrome-border);
+	border-radius: 3px;
+}
+
+.rest-playground__nav-loading {
+	align-items: center;
+	color: var(--rest-playground-chrome-muted);
+	display: flex;
+	font-size: var(--rest-playground-font-md);
+	gap: 8px;
+	padding: 20px 16px;
+}
+
+/* Category */
+.rest-playground__category-header {
+	align-items: center;
+	background: none;
+	border: none;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	font-size: var(--rest-playground-font-sm);
+	font-weight: 700;
+	gap: 6px;
+	letter-spacing: 0.07em;
+	padding: 6px 16px;
+	text-align: left;
+	text-transform: uppercase;
+	transition: color 0.15s, background 0.15s;
+	width: 100%;
+}
+
+.rest-playground__category-header:hover {
+	background: var(--rest-playground-chrome-hover);
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__category-name {
+	flex: 1;
+}
+
+.rest-playground__category-count {
+	background: var(--rest-playground-chrome-border);
+	border-radius: 10px;
+	color: var(--rest-playground-chrome-muted);
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 600;
+	padding: 1px 5px;
+}
+
+.rest-playground__category-arrow {
+	flex-shrink: 0;
+	height: 12px;
+	stroke-linecap: round;
+	stroke-linejoin: round;
+	transition: transform 0.2s;
+	width: 12px;
+}
+
+.rest-playground__category-header.is-open .rest-playground__category-arrow {
+	transform: rotate(180deg);
+}
+
+.rest-playground__category-header.is-open .rest-playground__category-count {
+	background: var(--rest-playground-accent-light);
+	color: var(--rest-playground-accent);
+}
+
+/* Routes within a category */
+.rest-playground__category-routes {
+	display: none;
+	padding-bottom: 4px;
+}
+
+.rest-playground__category-routes.is-open {
+	display: block;
+}
+
+.rest-playground__route-item {
+	align-items: flex-start;
+	background: none;
+	border: none;
+	border-left: 3px solid transparent;
+	color: var(--rest-playground-chrome-text);
+	cursor: pointer;
+	display: flex;
+	font-size: var(--rest-playground-font-base);
+	gap: 8px;
+	padding: 6px 16px 6px 20px;
+	text-align: left;
+	transition: background 0.12s;
+	width: 100%;
+}
+
+.rest-playground__route-item:hover {
+	background: var(--rest-playground-chrome-hover);
+}
+
+.rest-playground__route-item.is-active {
+	background: var(--rest-playground-accent-light);
+	border-left-color: var(--rest-playground-accent);
+	color: var(--rest-playground-accent-soft);
+}
+
+.rest-playground__route-methods {
+	display: flex;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 3px;
+	padding-top: 1px;
+}
+
+.rest-playground__route-path {
+	color: inherit;
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-sm);
+	line-height: 1.4;
+	opacity: 0.9;
+	word-break: break-all;
+}
+
+.rest-playground__route-item.is-active .rest-playground__route-path {
+	opacity: 1;
+}
+
+/* Method badges */
+.rest-playground__badge {
+	border-radius: 3px;
+	color: var(--rest-playground-white);
+	display: inline-block;
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 700;
+	letter-spacing: 0.03em;
+	line-height: 1.5;
+	padding: 1px 4px;
+	text-transform: uppercase;
+}
+
+.rest-playground__badge--get {
+	background: var(--rest-playground-get);
+}
+
+.rest-playground__badge--post {
+	background: var(--rest-playground-post);
+}
+
+.rest-playground__badge--put {
+	background: var(--rest-playground-put);
+}
+
+.rest-playground__badge--patch {
+	background: var(--rest-playground-patch);
+}
+
+.rest-playground__badge--delete {
+	background: var(--rest-playground-delete);
+}

@@ -1,0 +1,67 @@
+/* ==========================================================================
+   Fonts — Self-hosted Fira Sans (UI) & Fira Mono (code/mono)
+   Latin subset only; WOFF2 for all modern browsers.
+   ========================================================================== */
+
+/* Fira Sans 400 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/fira-sans-400.woff2") format("woff2");
+}
+
+/* Fira Sans 500 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 500;
+	src: url("../fonts/fira-sans-500.woff2") format("woff2");
+}
+
+/* Fira Sans 600 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 600;
+	src: url("../fonts/fira-sans-600.woff2") format("woff2");
+}
+
+/* Fira Sans 700 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 700;
+	src: url("../fonts/fira-sans-700.woff2") format("woff2");
+}
+
+/* Fira Mono 400 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/fira-mono-400.woff2") format("woff2");
+}
+
+/* Fira Mono 500 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 500;
+	src: url("../fonts/fira-mono-500.woff2") format("woff2");
+}
+
+/* Fira Mono 700 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 700;
+	src: url("../fonts/fira-mono-700.woff2") format("woff2");
+}

@@ -1,0 +1,34 @@
+/* ==========================================================================
+   Utilities — helper classes and responsive breakpoints.
+   ========================================================================== */
+
+[hidden] {
+	display: none !important;
+}
+
+/* Stack layout on narrow viewports */
+@media (max-width: 900px) {
+
+	.rest-playground {
+		grid-template-columns: 1fr;
+		grid-template-rows: auto;
+		height: auto;
+		overflow: auto;
+	}
+
+	.rest-playground-body {
+		height: auto;
+		overflow: auto;
+	}
+
+	.rest-playground__sidebar {
+		border-bottom: 1px solid var(--rest-playground-chrome-border);
+		border-right: none;
+		max-height: 50vh;
+	}
+
+	.rest-playground__response-panel {
+		border-top: 1px solid var(--rest-playground-chrome-border);
+		min-height: 400px;
+	}
+}

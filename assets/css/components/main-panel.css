@@ -1,0 +1,164 @@
+/* ==========================================================================
+   Main panel — welcome screen, endpoint header, method tabs, URL bar.
+   ========================================================================== */
+
+.rest-playground__main {
+	background: var(--rest-playground-main-bg);
+	border-right: 1px solid var(--rest-playground-border);
+	display: flex;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+/* Welcome screen */
+.rest-playground__welcome {
+	align-items: center;
+	display: flex;
+	flex: 1;
+	justify-content: center;
+	padding: 40px;
+}
+
+.rest-playground__welcome-inner {
+	max-width: 440px;
+	text-align: center;
+}
+
+.rest-playground__welcome-icon {
+	height: 72px;
+	margin-bottom: 20px;
+	width: 72px;
+}
+
+.rest-playground__welcome-title {
+	color: var(--rest-playground-text);
+	font-size: var(--rest-playground-font-lg);
+	font-weight: 700;
+	margin: 0 0 10px;
+}
+
+.rest-playground__welcome-desc {
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-md);
+	margin: 0 0 24px;
+}
+
+.rest-playground__tips {
+	background: var(--rest-playground-card-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius-lg);
+	list-style: none;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+	text-align: left;
+}
+
+.rest-playground__tips li {
+	border-bottom: 1px solid var(--rest-playground-border);
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-md);
+	padding: 10px 16px;
+}
+
+.rest-playground__tips li:last-child {
+	border-bottom: none;
+}
+
+.rest-playground__tips li::before {
+	color: var(--rest-playground-accent);
+	content: "→ ";
+	font-weight: 700;
+}
+
+/* Endpoint panel */
+.rest-playground__endpoint {
+	display: flex;
+	flex: 1;
+	flex-direction: column;
+	min-height: 0;
+	overflow: hidden;
+}
+
+.rest-playground__endpoint-header {
+	background: var(--rest-playground-card-bg);
+	border-bottom: 1px solid var(--rest-playground-border);
+	display: flex;
+	flex-direction: column;
+	flex-shrink: 0;
+	gap: 10px;
+	padding: 16px 20px;
+}
+
+/* Method tabs */
+.rest-playground__method-tabs {
+	display: flex;
+	gap: 4px;
+}
+
+.rest-playground__method-tab {
+	background: var(--rest-playground-main-bg);
+	border: 2px solid transparent;
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-muted);
+	cursor: pointer;
+	font-size: var(--rest-playground-font-sm);
+	font-weight: 700;
+	letter-spacing: 0.05em;
+	padding: 5px 12px;
+	text-transform: uppercase;
+	transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.rest-playground__method-tab--get {
+	--tab-color: var(--rest-playground-get);
+}
+
+.rest-playground__method-tab--post {
+	--tab-color: var(--rest-playground-post);
+}
+
+.rest-playground__method-tab--put {
+	--tab-color: var(--rest-playground-put);
+}
+
+.rest-playground__method-tab--patch {
+	--tab-color: var(--rest-playground-patch);
+}
+
+.rest-playground__method-tab--delete {
+	--tab-color: var(--rest-playground-delete);
+}
+
+.rest-playground__method-tab:hover,
+.rest-playground__method-tab.is-active {
+	background: color-mix(in sRGB, var(--tab-color) 12%, transparent);
+	border-color: var(--tab-color);
+	color: var(--tab-color);
+}
+
+/* URL bar */
+.rest-playground__url-bar {
+	align-items: center;
+	background: var(--rest-playground-main-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius);
+	display: flex;
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-base);
+	gap: 0;
+	overflow: hidden;
+	padding: 7px 12px;
+}
+
+.rest-playground__url-base {
+	color: var(--rest-playground-muted);
+	white-space: nowrap;
+}
+
+.rest-playground__url-route {
+	color: var(--rest-playground-text);
+	font-weight: 600;
+	word-break: break-all;
+}

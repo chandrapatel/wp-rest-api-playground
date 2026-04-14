@@ -1,0 +1,67 @@
+/* ==========================================================================
+   Custom Properties — design tokens for the entire plugin UI.
+   ========================================================================== */
+
+:root {
+
+	/* Layout */
+	--rest-playground-sidebar-w: 20%;
+	--rest-playground-response-w: 30%;
+
+	/* Font sizes — fluid scale: clamp(min @ ~1280px, vw-based fluid, max @ ~2560px) */
+	--rest-playground-font-xs: clamp(9px, 0.6vw, 11px);  /* badges, micro labels         */
+	--rest-playground-font-sm: clamp(11px, 0.75vw, 14px);  /* secondary labels, meta text  */
+	--rest-playground-font-base: clamp(12px, 0.85vw, 15px);  /* controls, tabs, mono output  */
+	--rest-playground-font-md: clamp(13px, 0.9vw, 16px);  /* inputs, body text            */
+	--rest-playground-font-lg: clamp(20px, 1.4vw, 28px);  /* welcome title                */
+	--rest-playground-header-h: 52px;
+
+	/* Colours — dark chrome (sidebars) */
+	--rest-playground-chrome-bg: #0f172a;
+	--rest-playground-chrome-surface: #1e293b;
+	--rest-playground-chrome-border: #334155;
+	--rest-playground-chrome-text: #e2e8f0;
+	--rest-playground-chrome-muted: #94a3b8;
+	--rest-playground-chrome-hover: #263548;
+
+	/* Colours — main content (light) */
+	--rest-playground-main-bg: #f8fafc;
+	--rest-playground-card-bg: #fff;
+	--rest-playground-border: #e2e8f0;
+	--rest-playground-text: #1e293b;
+	--rest-playground-muted: #64748b;
+
+	/* Accent */
+	--rest-playground-accent: #6366f1;
+	--rest-playground-accent-hover: #4f46e5;
+	--rest-playground-accent-light: rgba(99, 102, 241, 0.12);
+	--rest-playground-accent-soft: #c7d2fe;
+	--rest-playground-white: #fff;
+
+	/* HTTP method colours */
+	--rest-playground-get: #10b981;
+	--rest-playground-post: #3b82f6;
+	--rest-playground-put: #f59e0b;
+	--rest-playground-patch: #8b5cf6;
+	--rest-playground-delete: #ef4444;
+
+	/* Status colours */
+	--rest-playground-success: #10b981;
+	--rest-playground-warning: #f59e0b;
+	--rest-playground-error: #ef4444;
+
+	/* JSON syntax */
+	--rest-playground-json-key: #7dd3fc;
+	--rest-playground-json-string: #86efac;
+	--rest-playground-json-number: #fbbf24;
+	--rest-playground-json-boolean: #f472b6;
+	--rest-playground-json-null: #94a3b8;
+
+	/* Misc */
+	--rest-playground-radius: 6px;
+	--rest-playground-radius-lg: 10px;
+	--rest-playground-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+	--rest-playground-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
+	--rest-playground-font-sans: "Fira Sans", system-ui, sans-serif;
+	--rest-playground-font-mono: "Fira Mono", consolas, "Liberation Mono", menlo, monospace;
+}

@@ -1,0 +1,33 @@
+/* ==========================================================================
+   Base — reset, body, and root three-column grid layout.
+   ========================================================================== */
+
+.rest-playground-body {
+	background: var(--rest-playground-chrome-bg);
+	color: var(--rest-playground-text);
+	font-family: var(--rest-playground-font-sans);
+	font-size: var(--rest-playground-font-md);
+
+	/* WordPress sets html { margin-top: admin-bar-height } when the admin bar
+	   is visible. 100vh still equals the full viewport, so subtract the bar
+	   height to avoid the layout spilling 32px below the visible area. */
+	height: calc(100vh - var(--wp-admin--admin-bar--height, 0px));
+	line-height: 1.5;
+	margin: 0;
+	overflow: hidden;
+	padding: 0;
+}
+
+*,
+*::before,
+*::after {
+	box-sizing: border-box;
+}
+
+.rest-playground {
+	display: grid;
+	grid-template-columns: var(--rest-playground-sidebar-w) 1fr var(--rest-playground-response-w);
+	grid-template-rows: 100%;
+	height: 100%;
+	overflow: hidden;
+}
