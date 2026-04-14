@@ -4,13 +4,88 @@
    ========================================================================== */
 
 /* --------------------------------------------------------------------------
+   Self-hosted Fonts — Fira Sans (UI) & Fira Mono (code/mono)
+   Latin subset only; WOFF2 for all modern browsers.
+   -------------------------------------------------------------------------- */
+
+/* Fira Sans 400 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/fira-sans-400.woff2") format("woff2");
+}
+
+/* Fira Sans 500 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 500;
+	src: url("../fonts/fira-sans-500.woff2") format("woff2");
+}
+
+/* Fira Sans 600 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 600;
+	src: url("../fonts/fira-sans-600.woff2") format("woff2");
+}
+
+/* Fira Sans 700 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Sans";
+	font-style: normal;
+	font-weight: 700;
+	src: url("../fonts/fira-sans-700.woff2") format("woff2");
+}
+
+/* Fira Mono 400 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 400;
+	src: url("../fonts/fira-mono-400.woff2") format("woff2");
+}
+
+/* Fira Mono 500 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 500;
+	src: url("../fonts/fira-mono-500.woff2") format("woff2");
+}
+
+/* Fira Mono 700 */
+@font-face {
+	font-display: swap;
+	font-family: "Fira Mono";
+	font-style: normal;
+	font-weight: 700;
+	src: url("../fonts/fira-mono-700.woff2") format("woff2");
+}
+
+/* --------------------------------------------------------------------------
    Custom Properties
    -------------------------------------------------------------------------- */
 :root {
 
 	/* Layout */
-	--rest-playground-sidebar-w: 320px;
-	--rest-playground-response-w: 480px;
+	--rest-playground-sidebar-w: 20%;
+	--rest-playground-response-w: 30%;
+
+	/* Font sizes — fluid scale: clamp(min @ ~1280px, vw-based fluid, max @ ~2560px) */
+	--rest-playground-font-xs:   clamp(9px,  0.6vw,  11px);  /* badges, micro labels         */
+	--rest-playground-font-sm:   clamp(11px, 0.75vw, 14px);  /* secondary labels, meta text  */
+	--rest-playground-font-base: clamp(12px, 0.85vw, 15px);  /* controls, tabs, mono output  */
+	--rest-playground-font-md:   clamp(13px, 0.9vw,  16px);  /* inputs, body text            */
+	--rest-playground-font-lg:   clamp(20px, 1.4vw,  28px);  /* welcome title                */
 	--rest-playground-header-h: 52px;
 
 	/* Colours — dark chrome (sidebars) */
@@ -59,7 +134,8 @@
 	--rest-playground-radius-lg: 10px;
 	--rest-playground-shadow: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
 	--rest-playground-shadow-lg: 0 4px 6px rgba(0, 0, 0, 0.07), 0 2px 4px rgba(0, 0, 0, 0.06);
-	--rest-playground-font-mono: "SFMono-Regular", consolas, "Liberation Mono", menlo, monospace;
+	--rest-playground-font-sans: "Fira Sans", system-ui, sans-serif;
+	--rest-playground-font-mono: "Fira Mono", consolas, "Liberation Mono", menlo, monospace;
 }
 
 /* --------------------------------------------------------------------------
@@ -68,9 +144,12 @@
 .rest-playground-body {
 	background: var(--rest-playground-chrome-bg);
 	color: var(--rest-playground-text);
-	font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, sans-serif;
-	font-size: 14px;
-	height: 100vh;
+	font-family: var(--rest-playground-font-sans);
+	font-size: var(--rest-playground-font-md);
+	/* WordPress sets html { margin-top: admin-bar-height } when the admin bar
+	   is visible. 100vh still equals the full viewport, so subtract the bar
+	   height to avoid the layout spilling 32px below the visible area. */
+	height: calc(100vh - var(--wp-admin--admin-bar--height, 0px));
 	line-height: 1.5;
 	margin: 0;
 	overflow: hidden;
@@ -89,8 +168,8 @@
 .rest-playground {
 	display: grid;
 	grid-template-columns: var(--rest-playground-sidebar-w) 1fr var(--rest-playground-response-w);
-	grid-template-rows: 100vh;
-	height: 100vh;
+	grid-template-rows: 100%;
+	height: 100%;
 	overflow: hidden;
 }
 
@@ -102,6 +181,7 @@
 	border-right: 1px solid var(--rest-playground-chrome-border);
 	display: flex;
 	flex-direction: column;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -116,7 +196,7 @@
 	align-items: center;
 	color: var(--rest-playground-chrome-text);
 	display: flex;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	font-weight: 600;
 	gap: 8px;
 	letter-spacing: 0.01em;
@@ -142,7 +222,7 @@
 	color: var(--rest-playground-chrome-muted);
 	cursor: pointer;
 	display: flex;
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	gap: 8px;
 	padding: 10px 16px;
 	text-align: left;
@@ -191,7 +271,7 @@
 
 .rest-playground__auth-help {
 	color: var(--rest-playground-chrome-muted);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	line-height: 1.6;
 	margin: 0 0 12px;
 }
@@ -199,7 +279,7 @@
 .rest-playground__field-label {
 	color: var(--rest-playground-chrome-muted);
 	display: block;
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	font-weight: 600;
 	letter-spacing: 0.05em;
 	margin-bottom: 4px;
@@ -213,7 +293,7 @@
 	color: var(--rest-playground-chrome-text);
 	display: block;
 	font-family: inherit;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	margin-bottom: 10px;
 	outline: none;
 	padding: 7px 10px;
@@ -257,7 +337,7 @@
 	border-radius: var(--rest-playground-radius);
 	color: var(--rest-playground-chrome-text);
 	font-family: inherit;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	outline: none;
 	padding: 7px 10px 7px 32px;
 	transition: border-color 0.15s;
@@ -277,6 +357,7 @@
    -------------------------------------------------------------------------- */
 .rest-playground__nav {
 	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 	padding: 8px 0;
 }
@@ -298,7 +379,7 @@
 	align-items: center;
 	color: var(--rest-playground-chrome-muted);
 	display: flex;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	gap: 8px;
 	padding: 20px 16px;
 }
@@ -311,7 +392,7 @@
 	color: var(--rest-playground-chrome-muted);
 	cursor: pointer;
 	display: flex;
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	font-weight: 700;
 	gap: 6px;
 	letter-spacing: 0.07em;
@@ -335,7 +416,7 @@
 	background: var(--rest-playground-chrome-border);
 	border-radius: 10px;
 	color: var(--rest-playground-chrome-muted);
-	font-size: 10px;
+	font-size: var(--rest-playground-font-xs);
 	font-weight: 600;
 	padding: 1px 5px;
 }
@@ -376,7 +457,7 @@
 	color: var(--rest-playground-chrome-text);
 	cursor: pointer;
 	display: flex;
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	gap: 8px;
 	padding: 6px 16px 6px 20px;
 	text-align: left;
@@ -405,7 +486,7 @@
 .rest-playground__route-path {
 	color: inherit;
 	font-family: var(--rest-playground-font-mono);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	line-height: 1.4;
 	opacity: 0.9;
 	word-break: break-all;
@@ -420,7 +501,7 @@
 	border-radius: 3px;
 	color: var(--rest-playground-white);
 	display: inline-block;
-	font-size: 9px;
+	font-size: var(--rest-playground-font-xs);
 	font-weight: 700;
 	letter-spacing: 0.03em;
 	line-height: 1.5;
@@ -456,6 +537,7 @@
 	border-right: 1px solid var(--rest-playground-border);
 	display: flex;
 	flex-direction: column;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -481,14 +563,14 @@
 
 .rest-playground__welcome-title {
 	color: var(--rest-playground-text);
-	font-size: 20px;
+	font-size: var(--rest-playground-font-lg);
 	font-weight: 700;
 	margin: 0 0 10px;
 }
 
 .rest-playground__welcome-desc {
 	color: var(--rest-playground-muted);
-	font-size: 14px;
+	font-size: var(--rest-playground-font-md);
 	margin: 0 0 24px;
 }
 
@@ -506,7 +588,7 @@
 .rest-playground__tips li {
 	border-bottom: 1px solid var(--rest-playground-border);
 	color: var(--rest-playground-muted);
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	padding: 10px 16px;
 }
 
@@ -525,6 +607,7 @@
 	display: flex;
 	flex: 1;
 	flex-direction: column;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -550,7 +633,7 @@
 	border-radius: var(--rest-playground-radius);
 	color: var(--rest-playground-muted);
 	cursor: pointer;
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	font-weight: 700;
 	letter-spacing: 0.05em;
 	padding: 5px 12px;
@@ -593,7 +676,7 @@
 	border-radius: var(--rest-playground-radius);
 	display: flex;
 	font-family: var(--rest-playground-font-mono);
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	gap: 0;
 	overflow: hidden;
 	padding: 7px 12px;
@@ -613,6 +696,7 @@
 /* Request form */
 .rest-playground__request {
 	flex: 1;
+	min-height: 0;
 	overflow-y: auto;
 	padding: 20px;
 }
@@ -632,7 +716,7 @@
 
 .rest-playground__section-title {
 	color: var(--rest-playground-muted);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	margin: 0 0 12px;
@@ -641,7 +725,7 @@
 
 .rest-playground__no-params {
 	color: var(--rest-playground-muted);
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	font-style: italic;
 }
 
@@ -660,13 +744,13 @@
 .rest-playground__field-name {
 	color: var(--rest-playground-text);
 	font-family: var(--rest-playground-font-mono);
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	font-weight: 600;
 }
 
 .rest-playground__field-required {
 	color: var(--rest-playground-error);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	font-weight: 700;
 }
 
@@ -676,13 +760,13 @@
 	border-radius: 3px;
 	color: var(--rest-playground-muted);
 	font-family: var(--rest-playground-font-mono);
-	font-size: 10px;
+	font-size: var(--rest-playground-font-xs);
 	padding: 1px 5px;
 }
 
 .rest-playground__field-desc {
 	color: var(--rest-playground-muted);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 	line-height: 1.5;
 	margin: 4px 0 0;
 }
@@ -694,7 +778,7 @@
 	color: var(--rest-playground-text);
 	display: block;
 	font-family: inherit;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	outline: none;
 	padding: 7px 10px;
 	transition: border-color 0.15s, box-shadow 0.15s;
@@ -718,7 +802,7 @@
 	cursor: pointer;
 	display: block;
 	font-family: inherit;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	outline: none;
 	padding: 7px 10px;
 	transition: border-color 0.15s;
@@ -767,7 +851,7 @@
 	border: none;
 	color: var(--rest-playground-muted);
 	cursor: pointer;
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	font-weight: 500;
 	padding: 5px 14px;
 	transition: background 0.15s, color 0.15s;
@@ -789,7 +873,7 @@
 	color: var(--rest-playground-chrome-text);
 	display: block;
 	font-family: var(--rest-playground-font-mono);
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	line-height: 1.6;
 	min-height: 160px;
 	outline: none;
@@ -805,10 +889,10 @@
 
 /* Send button */
 .rest-playground__send-bar {
+	background: var(--rest-playground-card-bg);
 	border-top: 1px solid var(--rest-playground-border);
 	flex-shrink: 0;
-	margin-top: 8px;
-	padding: 16px 0 0;
+	padding: 16px 20px;
 }
 
 .rest-playground__send-btn {
@@ -819,7 +903,7 @@
 	color: var(--rest-playground-white);
 	cursor: pointer;
 	display: inline-flex;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	font-weight: 600;
 	gap: 8px;
 	padding: 9px 20px;
@@ -854,7 +938,7 @@
 	border-radius: var(--rest-playground-radius);
 	cursor: pointer;
 	display: inline-flex;
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	font-weight: 600;
 	justify-content: center;
 	padding: 6px 14px;
@@ -890,6 +974,7 @@
 	background: var(--rest-playground-chrome-bg);
 	display: flex;
 	flex-direction: column;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -906,7 +991,7 @@
 
 .rest-playground__response-title {
 	color: var(--rest-playground-chrome-muted);
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	font-weight: 700;
 	letter-spacing: 0.07em;
 	margin: 0;
@@ -925,7 +1010,7 @@
 	border-radius: var(--rest-playground-radius);
 	display: inline-flex;
 	font-family: var(--rest-playground-font-mono);
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	font-weight: 700;
 	gap: 6px;
 	padding: 3px 8px;
@@ -949,13 +1034,13 @@
 .rest-playground__status-text {
 	color: var(--rest-playground-chrome-muted);
 	font-family: var(--rest-playground-font-mono);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 }
 
 .rest-playground__timing {
 	color: var(--rest-playground-chrome-muted);
 	font-family: var(--rest-playground-font-mono);
-	font-size: 11px;
+	font-size: var(--rest-playground-font-sm);
 }
 
 .rest-playground__copy-btn {
@@ -992,6 +1077,7 @@
 	display: flex;
 	flex: 1;
 	flex-direction: column;
+	min-height: 0;
 	overflow: hidden;
 }
 
@@ -1014,7 +1100,7 @@
 }
 
 .rest-playground__response-empty p {
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	margin: 0;
 }
 
@@ -1031,7 +1117,7 @@
 	border-bottom: 2px solid transparent;
 	color: var(--rest-playground-chrome-muted);
 	cursor: pointer;
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	font-weight: 500;
 	padding: 8px 16px;
 	transition: color 0.15s, border-color 0.15s;
@@ -1064,7 +1150,7 @@
 .rest-playground__json-output {
 	color: var(--rest-playground-chrome-text);
 	font-family: var(--rest-playground-font-mono);
-	font-size: 12px;
+	font-size: var(--rest-playground-font-base);
 	line-height: 1.7;
 	margin: 0;
 	padding: 16px;
@@ -1098,14 +1184,14 @@
 	align-items: center;
 	color: var(--rest-playground-chrome-muted);
 	display: flex;
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	gap: 10px;
 	padding: 20px 16px;
 }
 
 .rest-playground__response-error {
 	color: var(--rest-playground-error);
-	font-size: 13px;
+	font-size: var(--rest-playground-font-md);
 	padding: 16px;
 }
 

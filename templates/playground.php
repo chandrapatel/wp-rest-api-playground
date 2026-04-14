@@ -146,17 +146,17 @@ if ( ! defined( 'ABSPATH' ) ) {
 					<div id="body-fields"></div>
 				</section>
 
-				<div class="rest-playground__send-bar">
-					<button type="button" class="rest-playground__send-btn" id="send-request">
-						<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-							<line x1="22" y1="2" x2="11" y2="13"/>
-							<polygon points="22 2 15 22 11 13 2 9 22 2"/>
-						</svg>
-						<?php esc_html_e( 'Send Request', 'wp-rest-api-playground' ); ?>
-					</button>
-				</div>
-
 			</div><!-- /.rest-playground__request -->
+
+			<div class="rest-playground__send-bar">
+				<button type="button" class="rest-playground__send-btn" id="send-request">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+						<line x1="22" y1="2" x2="11" y2="13"/>
+						<polygon points="22 2 15 22 11 13 2 9 22 2"/>
+					</svg>
+					<?php esc_html_e( 'Send Request', 'wp-rest-api-playground' ); ?>
+				</button>
+			</div>
 
 		</div><!-- /#rest-playground-endpoint -->
 
