@@ -24,6 +24,10 @@ WP REST API Playground provides a developer-friendly interface accessible at `/r
 - **Timing indicator** — each request shows its round-trip duration in milliseconds.
 - **Administrator-only access** — the playground page is restricted to users with the `manage_options` capability; all other visitors receive a 403 response.
 
+## Screenshots
+
+See the [blog post](https://chandra.dev/wp-rest-api-playground/#screenshots) for screenshots.
+
 ## Requirements
 
 - WordPress 6.0 or higher
