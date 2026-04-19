@@ -6,6 +6,19 @@
 	display: none !important;
 }
 
+/* HTTPS warning banner */
+.rest-playground__https-warning {
+	align-items: center;
+	background: #7f1d1d;
+	color: var(--rest-playground-white);
+	display: flex;
+	font-size: 13px;
+	gap: 10px;
+	line-height: 1.4;
+	opacity: 0.9;
+	padding: 10px 16px;
+}
+
 /* Stack layout on narrow viewports */
 @media (max-width: 900px) {
 

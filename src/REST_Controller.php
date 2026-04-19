@@ -58,6 +58,16 @@ class REST_Controller {
 				continue;
 			}
 
+			/**
+			 * Allow other plugins to hide a specific route from the playground.
+			 *
+			 * @param bool   $expose Whether to expose this route. Default true.
+			 * @param string $route  The route pattern, e.g. /wp/v2/users.
+			 */
+			if ( ! apply_filters( 'rest_playground_expose_route', true, $route ) ) {
+				continue;
+			}
+
 			$methods_data = [];
 
 			foreach ( $handlers as $handler ) {

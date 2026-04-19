@@ -61,6 +61,12 @@ class Page {
 			);
 		}
 
+		// Prevent the playground from being embedded in frames (clickjacking protection)
+		// and restrict resource loading to same origin only.
+		header( "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" );
+		header( 'X-Frame-Options: DENY' );
+		header( 'X-Content-Type-Options: nosniff' );
+
 		$this->enqueue_assets();
 
 		$template = WP_REST_PLAYGROUND_PLUGIN_DIR . 'templates/playground.php';
@@ -109,6 +115,7 @@ class Page {
 				'nonce'     => wp_create_nonce( 'wp_rest' ),
 				'routesUrl' => esc_url_raw( rest_url( 'rest-playground/v1/routes' ) ),
 				'siteUrl'   => esc_url_raw( get_site_url() ),
+				'isHttps'   => is_ssl(),
 			]
 		);
 	}

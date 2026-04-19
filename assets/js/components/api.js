@@ -178,7 +178,13 @@ export const onSendRequest = async () => {
 		});
 	} catch (err) {
 		const duration = Math.round(performance.now() - startTime);
-		renderResponseError(err instanceof Error ? err.message : String(err), duration);
+		// eslint-disable-next-line no-console
+		console.error('[REST Playground] Request failed:', err);
+		const message =
+			err instanceof Error && err.message.includes('Invalid JSON')
+				? err.message
+				: 'Request failed. Please check your connection and try again.';
+		renderResponseError(message, duration);
 	} finally {
 		if (sendBtn) {
 			sendBtn.disabled = false;

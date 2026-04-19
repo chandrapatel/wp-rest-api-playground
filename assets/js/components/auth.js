@@ -38,10 +38,19 @@ export const loadAuthFromStorage = () => {
 	try {
 		const stored = sessionStorage.getItem('wp-rest-playground-auth');
 		if (stored) {
-			state.auth = JSON.parse(stored);
+			const parsed = JSON.parse(stored);
+			if (
+				parsed &&
+				typeof parsed.username === 'string' &&
+				typeof parsed.password === 'string'
+			) {
+				state.auth = { username: parsed.username, password: parsed.password };
+			} else {
+				sessionStorage.removeItem('wp-rest-playground-auth');
+			}
 		}
 	} catch {
-		// ignore
+		sessionStorage.removeItem('wp-rest-playground-auth');
 	}
 };
 
@@ -52,7 +61,7 @@ export const saveAuth = () => {
 	try {
 		sessionStorage.setItem('wp-rest-playground-auth', JSON.stringify(state.auth));
 	} catch {
-		// ignore
+		// ignore — storage quota exceeded or blocked
 	}
 	updateAuthStatus();
 	setAuthFormVisible(false);

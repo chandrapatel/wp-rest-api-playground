@@ -30,7 +30,24 @@ export const onCategoryToggle = (e) => {
 export const onRouteSelect = (e) => {
 	const btn = /** @type {HTMLElement} */ (e.currentTarget);
 	const encoded = btn.dataset.endpoint ?? '';
-	const endpoint = JSON.parse(decodeURIComponent(atob(encoded)));
+
+	let endpoint;
+	try {
+		const decoded = JSON.parse(decodeURIComponent(atob(encoded)));
+		if (
+			!decoded ||
+			typeof decoded.route !== 'string' ||
+			typeof decoded.methods !== 'object' ||
+			decoded.methods === null
+		) {
+			throw new Error('Invalid endpoint structure');
+		}
+		endpoint = decoded;
+	} catch (err) {
+		// eslint-disable-next-line no-console
+		console.error('[REST Playground] Failed to decode endpoint data:', err);
+		return;
+	}
 
 	// Update active state in sidebar.
 	document

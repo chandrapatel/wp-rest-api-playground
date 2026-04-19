@@ -7,7 +7,6 @@
 import '../css/rest-playground.css';
 
 import { state } from './components/state';
-import { escapeHtml } from './components/utils';
 import {
 	loadAuthFromStorage,
 	updateAuthStatus,
@@ -23,14 +22,24 @@ const init = async () => {
 	loadAuthFromStorage();
 	updateAuthStatus();
 
+	// Warn when the site is not served over HTTPS. Application Password credentials
+	// are sent as a base64-encoded Authorization header — base64 is not encryption
+	// and the credentials are fully exposed on unencrypted connections.
+	if (!window.wpRestPlayground?.isHttps) {
+		const banner = document.getElementById('https-warning');
+		if (banner) banner.hidden = false;
+	}
+
 	// Fetch routes.
 	const nav = document.getElementById('endpoint-nav');
 	const routesUrl = window.wpRestPlayground?.routesUrl;
 
 	if (!routesUrl) {
 		if (nav) {
-			nav.innerHTML =
-				'<p style="padding:16px;color:var(--rest-playground-error);">Configuration error: routesUrl not set.</p>';
+			const p = document.createElement('p');
+			p.style.cssText = 'padding:16px;color:var(--rest-playground-error);';
+			p.textContent = 'Configuration error: routesUrl not set.';
+			nav.appendChild(p);
 		}
 		return;
 	}
@@ -53,8 +62,14 @@ const init = async () => {
 
 		renderSidebar(data);
 	} catch (err) {
+		// eslint-disable-next-line no-console
+		console.error('[REST Playground] Failed to load endpoints:', err);
 		if (nav) {
-			nav.innerHTML = `<p style="padding:16px;color:var(--rest-playground-error);font-size:13px;">Failed to load endpoints: ${escapeHtml(err instanceof Error ? err.message : String(err))}</p>`;
+			const p = document.createElement('p');
+			p.style.cssText = 'padding:16px;color:var(--rest-playground-error);font-size:13px;';
+			p.textContent =
+				'Failed to load endpoints. Please refresh the page or check your connection.';
+			nav.appendChild(p);
 		}
 	}
 
