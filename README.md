@@ -19,6 +19,7 @@ WP REST API Playground provides a developer-friendly interface accessible at `/r
 - **Loading states** — a spinner appears while the endpoint list loads; the Send button shows "Sending…" and is disabled during an in-flight request.
 - **Syntax-highlighted response** — JSON responses are displayed with colour-coded keys, strings, numbers, booleans, and nulls. Non-JSON responses are shown as plain text.
 - **Response headers tab** — inspect the full set of response headers alongside the body.
+- **Code examples tab** — after each request a **Code** tab appears with ready-to-use JavaScript `fetch()`, WordPress PHP (`wp_remote_get` / `wp_remote_post`), and cURL snippets for the same call; switch between the three with language sub-tabs. Code can also be previewed before sending a request.
 - **Copy to clipboard** — copy the formatted response body with one click.
 - **Timing indicator** — each request shows its round-trip duration in milliseconds.
 - **Administrator-only access** — the playground page is restricted to users with the `manage_options` capability; all other visitors receive a 403 response.
@@ -115,6 +116,7 @@ wp-rest-api-playground/
 │           ├── auth.js             # Application Password authentication
 │           ├── api.js              # Request building and execution
 │           ├── search.js           # Sidebar search/filter
+│           ├── generateCode.js     # JS fetch / WordPress PHP / cURL code generators
 │           ├── utils.js            # Shared utilities (escapeHtml, syntaxHighlight, …)
 │           └── render/
 │               ├── sidebar.js      # Category and route list renderer
@@ -169,6 +171,9 @@ This means the compiled JavaScript could not read the runtime configuration inje
 This plugin was developed with the assistance of [Claude](https://claude.ai) (Anthropic's AI). All code, structure, and documentation were generated through a collaborative session between the author and Claude Code. The implementation has been reviewed and is maintained by the author.
 
 ## Changelog
+
+### 1.1.0
+- **Code examples tab** — a new Code tab in the response panel generates ready-to-use code snippets for every request. Switch between JavaScript (`fetch()`), WordPress PHP (`wp_remote_get` / `wp_remote_post`), and cURL using language sub-tabs. Code can also be previewed before sending a request.
 
 ### 1.0.0
 - Three-panel layout with endpoint browser, request builder, and response viewer.
