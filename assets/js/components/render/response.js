@@ -3,6 +3,7 @@
  */
 
 import { escapeHtml, syntaxHighlight, statusModifier } from '../utils';
+import { generateJsCode, generatePhpCode, generateCurlCode } from '../generateCode';
 
 export const showResponseLoading = () => {
 	const meta = document.getElementById('response-meta');
@@ -45,6 +46,80 @@ export const renderResponseError = (message, duration) => {
 	}
 };
 
+// ---------------------------------------------------------------------------
+// Shared helpers for the Code tab
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the inner HTML for the code language sub-tabs and their panes.
+ *
+ * @param {string} jsCode   - The JavaScript fetch() code example.
+ * @param {string} phpCode  - The WordPress PHP code example.
+ * @param {string} curlCode - The cURL command example.
+ * @returns {string}
+ */
+const buildCodePanesHtml = (jsCode, phpCode, curlCode) => `
+	<div class="rest-playground__code-lang-tabs">
+		<button class="rest-playground__code-lang-tab is-active" data-lang="js" type="button">JavaScript</button>
+		<button class="rest-playground__code-lang-tab" data-lang="php" type="button">WordPress</button>
+		<button class="rest-playground__code-lang-tab" data-lang="curl" type="button">cURL</button>
+	</div>
+	<div id="resp-code-js-pane" class="rest-playground__code-lang-pane">
+		<pre class="rest-playground__json-output">${escapeHtml(jsCode)}</pre>
+	</div>
+	<div id="resp-code-php-pane" class="rest-playground__code-lang-pane" hidden>
+		<pre class="rest-playground__json-output">${escapeHtml(phpCode)}</pre>
+	</div>
+	<div id="resp-code-curl-pane" class="rest-playground__code-lang-pane" hidden>
+		<pre class="rest-playground__json-output">${escapeHtml(curlCode)}</pre>
+	</div>
+`;
+
+/**
+ * Attach click handlers for the response top-level tabs and the code language sub-tabs.
+ *
+ * @param {HTMLElement} bodyEl - The #response-body container.
+ */
+const attachTabHandlers = (bodyEl) => {
+	bodyEl.querySelectorAll('.rest-playground__resp-tab').forEach((tab) => {
+		tab.addEventListener('click', (e) => {
+			const target = /** @type {HTMLElement} */ (e.currentTarget).dataset.tab;
+			bodyEl.querySelectorAll('.rest-playground__resp-tab').forEach((t) => {
+				t.classList.remove('is-active');
+				t.setAttribute('aria-selected', 'false');
+			});
+			/** @type {HTMLElement} */ (e.currentTarget).classList.add('is-active');
+			/** @type {HTMLElement} */ (e.currentTarget).setAttribute('aria-selected', 'true');
+			const bodyPane = document.getElementById('resp-body-pane');
+			const headersPane = document.getElementById('resp-headers-pane');
+			const codePane = document.getElementById('resp-code-pane');
+			if (bodyPane) bodyPane.hidden = target !== 'body';
+			if (headersPane) headersPane.hidden = target !== 'headers';
+			if (codePane) codePane.hidden = target !== 'code';
+		});
+	});
+
+	bodyEl.querySelectorAll('.rest-playground__code-lang-tab').forEach((tab) => {
+		tab.addEventListener('click', (e) => {
+			const { lang } = /** @type {HTMLElement} */ (e.currentTarget).dataset;
+			bodyEl.querySelectorAll('.rest-playground__code-lang-tab').forEach((t) => {
+				t.classList.remove('is-active');
+			});
+			/** @type {HTMLElement} */ (e.currentTarget).classList.add('is-active');
+			const jsPane = document.getElementById('resp-code-js-pane');
+			const phpPane = document.getElementById('resp-code-php-pane');
+			const curlPane = document.getElementById('resp-code-curl-pane');
+			if (jsPane) jsPane.hidden = lang !== 'js';
+			if (phpPane) phpPane.hidden = lang !== 'php';
+			if (curlPane) curlPane.hidden = lang !== 'curl';
+		});
+	});
+};
+
+// ---------------------------------------------------------------------------
+// Public renderers
+// ---------------------------------------------------------------------------
+
 /**
  * Render the API response into the response panel.
  *
@@ -55,8 +130,19 @@ export const renderResponseError = (message, duration) => {
  * @param {boolean} opts.isJson - Whether the response is JSON.
  * @param {number} opts.duration - Request duration in milliseconds.
  * @param {Headers} opts.headers - Response headers object.
+ * @param {string} opts.requestUrl - The URL that was fetched.
+ * @param {{ method: string, headers: Record<string,string>, body?: string }} opts.requestOptions - The fetch options used.
  */
-export const renderResponse = ({ status, statusText, data, isJson, duration, headers }) => {
+export const renderResponse = ({
+	status,
+	statusText,
+	data,
+	isJson,
+	duration,
+	headers,
+	requestUrl,
+	requestOptions,
+}) => {
 	const metaEl = document.getElementById('response-meta');
 	const bodyEl = document.getElementById('response-body');
 	const mod = statusModifier(status);
@@ -105,11 +191,17 @@ export const renderResponse = ({ status, statusText, data, isJson, duration, hea
 	}
 	const formattedHeaders = syntaxHighlight(headerObj);
 
+	const jsCode = requestUrl && requestOptions ? generateJsCode(requestUrl, requestOptions) : '';
+	const phpCode = requestUrl && requestOptions ? generatePhpCode(requestUrl, requestOptions) : '';
+	const curlCode =
+		requestUrl && requestOptions ? generateCurlCode(requestUrl, requestOptions) : '';
+
 	if (bodyEl) {
 		bodyEl.innerHTML = `
 			<div class="rest-playground__resp-tabs" role="tablist">
 				<button class="rest-playground__resp-tab is-active" data-tab="body" type="button" role="tab" aria-selected="true">Body</button>
 				<button class="rest-playground__resp-tab" data-tab="headers" type="button" role="tab" aria-selected="false">Headers</button>
+				<button class="rest-playground__resp-tab" data-tab="code" type="button" role="tab" aria-selected="false">Code</button>
 			</div>
 			<div id="resp-body-pane" class="rest-playground__resp-pane">
 				<pre class="rest-playground__json-output">${formattedBody}</pre>
@@ -117,22 +209,50 @@ export const renderResponse = ({ status, statusText, data, isJson, duration, hea
 			<div id="resp-headers-pane" class="rest-playground__resp-pane" hidden>
 				<pre class="rest-playground__json-output">${formattedHeaders}</pre>
 			</div>
+			<div id="resp-code-pane" class="rest-playground__resp-pane" hidden>
+				${buildCodePanesHtml(jsCode, phpCode, curlCode)}
+			</div>
 		`;
 
-		bodyEl.querySelectorAll('.rest-playground__resp-tab').forEach((tab) => {
-			tab.addEventListener('click', (e) => {
-				const target = /** @type {HTMLElement} */ (e.currentTarget).dataset.tab;
-				bodyEl.querySelectorAll('.rest-playground__resp-tab').forEach((t) => {
-					t.classList.remove('is-active');
-					t.setAttribute('aria-selected', 'false');
-				});
-				/** @type {HTMLElement} */ (e.currentTarget).classList.add('is-active');
-				/** @type {HTMLElement} */ (e.currentTarget).setAttribute('aria-selected', 'true');
-				const bodyPane = document.getElementById('resp-body-pane');
-				const headersPane = document.getElementById('resp-headers-pane');
-				if (bodyPane) bodyPane.hidden = target !== 'body';
-				if (headersPane) headersPane.hidden = target !== 'headers';
-			});
-		});
+		attachTabHandlers(bodyEl);
+	}
+};
+
+/**
+ * Generate and display code examples without sending a request.
+ * Opens the response panel directly to the Code tab.
+ *
+ * @param {string} requestUrl                                                                    - The URL that was fetched.
+ * @param {{ method: string, headers: Record<string,string>, body?: string }} requestOptions - The fetch options used.
+ */
+export const renderCodeOnly = (requestUrl, requestOptions) => {
+	const metaEl = document.getElementById('response-meta');
+	const bodyEl = document.getElementById('response-body');
+
+	if (metaEl) metaEl.innerHTML = '';
+
+	const jsCode = generateJsCode(requestUrl, requestOptions);
+	const phpCode = generatePhpCode(requestUrl, requestOptions);
+	const curlCode = generateCurlCode(requestUrl, requestOptions);
+
+	if (bodyEl) {
+		bodyEl.innerHTML = `
+			<div class="rest-playground__resp-tabs" role="tablist">
+				<button class="rest-playground__resp-tab" data-tab="body" type="button" role="tab" aria-selected="false">Body</button>
+				<button class="rest-playground__resp-tab" data-tab="headers" type="button" role="tab" aria-selected="false">Headers</button>
+				<button class="rest-playground__resp-tab is-active" data-tab="code" type="button" role="tab" aria-selected="true">Code</button>
+			</div>
+			<div id="resp-body-pane" class="rest-playground__resp-pane" hidden>
+				<p class="rest-playground__no-params" style="padding:16px;">Send a request to see the response body.</p>
+			</div>
+			<div id="resp-headers-pane" class="rest-playground__resp-pane" hidden>
+				<p class="rest-playground__no-params" style="padding:16px;">Send a request to see the response headers.</p>
+			</div>
+			<div id="resp-code-pane" class="rest-playground__resp-pane">
+				${buildCodePanesHtml(jsCode, phpCode, curlCode)}
+			</div>
+		`;
+
+		attachTabHandlers(bodyEl);
 	}
 };

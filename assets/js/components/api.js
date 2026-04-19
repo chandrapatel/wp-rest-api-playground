@@ -4,7 +4,12 @@
 
 import { state } from './state';
 import { extractPathParams } from './utils';
-import { showResponseLoading, renderResponse, renderResponseError } from './render/response';
+import {
+	showResponseLoading,
+	renderResponse,
+	renderResponseError,
+	renderCodeOnly,
+} from './render/response';
 
 /**
  * Assemble the fetch URL and init options from the current form state.
@@ -123,6 +128,16 @@ export const buildRequest = () => {
 	};
 };
 
+export const onGetCode = () => {
+	if (!state.selectedEndpoint || !state.selectedMethod) return;
+	try {
+		const { url, options } = buildRequest();
+		renderCodeOnly(url, options);
+	} catch (err) {
+		renderResponseError(err instanceof Error ? err.message : String(err), 0);
+	}
+};
+
 export const onSendRequest = async () => {
 	if (!state.selectedEndpoint || !state.selectedMethod) return;
 
@@ -158,6 +173,8 @@ export const onSendRequest = async () => {
 			isJson,
 			duration,
 			headers: response.headers,
+			requestUrl: url,
+			requestOptions: options,
 		});
 	} catch (err) {
 		const duration = Math.round(performance.now() - startTime);

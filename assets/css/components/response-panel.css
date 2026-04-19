@@ -1,5 +1,6 @@
 /* ==========================================================================
-   Response panel — header, status badges, body/header tabs, JSON output, spinner.
+   Response panel — header, status badges, body/header tabs,
+   JSON output, spinner.
    ========================================================================== */
 
 .rest-playground__response-panel {
@@ -248,4 +249,37 @@
 	to {
 		transform: rotate(360deg);
 	}
+}
+
+/* Code tab — language switcher */
+.rest-playground__code-lang-tabs {
+	border-bottom: 1px solid var(--rest-playground-chrome-border);
+	display: flex;
+	flex-shrink: 0;
+	padding: 0 8px;
+}
+
+.rest-playground__code-lang-tab {
+	background: none;
+	border: none;
+	border-bottom: 2px solid transparent;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	font-size: var(--rest-playground-font-sm, 12px);
+	font-weight: 500;
+	padding: 6px 10px;
+	transition: color 0.15s, border-color 0.15s;
+}
+
+.rest-playground__code-lang-tab:hover {
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__code-lang-tab.is-active {
+	border-bottom-color: var(--rest-playground-accent);
+	color: var(--rest-playground-accent);
+}
+
+.rest-playground__code-lang-pane {
+	overflow-y: auto;
 }

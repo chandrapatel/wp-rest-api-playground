@@ -8,7 +8,8 @@
 	--rest-playground-sidebar-w: 20%;
 	--rest-playground-response-w: 30%;
 
-	/* Font sizes — fluid scale: clamp(min @ ~1280px, vw-based fluid, max @ ~2560px) */
+	/* Font sizes — fluid scale:
+	   clamp(min @ ~1280px, vw-based fluid, max @ ~2560px) */
 	--rest-playground-font-xs: clamp(9px, 0.6vw, 11px);  /* badges, micro labels         */
 	--rest-playground-font-sm: clamp(11px, 0.75vw, 14px);  /* secondary labels, meta text  */
 	--rest-playground-font-base: clamp(12px, 0.85vw, 15px);  /* controls, tabs, mono output  */

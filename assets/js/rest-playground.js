@@ -16,7 +16,7 @@ import {
 	setAuthFormVisible,
 } from './components/auth';
 import { renderSidebar } from './components/render/sidebar';
-import { onSendRequest } from './components/api';
+import { onSendRequest, onGetCode } from './components/api';
 import { onSearch } from './components/search';
 
 const init = async () => {
@@ -60,6 +60,7 @@ const init = async () => {
 
 	// Global event listeners.
 	document.getElementById('send-request')?.addEventListener('click', onSendRequest);
+	document.getElementById('get-code')?.addEventListener('click', onGetCode);
 	document.getElementById('endpoint-search')?.addEventListener('input', onSearch);
 
 	document.getElementById('auth-toggle')?.addEventListener('click', () => {

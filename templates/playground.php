@@ -156,6 +156,13 @@ if ( ! defined( 'ABSPATH' ) ) {
 					</svg>
 					<?php esc_html_e( 'Send Request', 'wp-rest-api-playground' ); ?>
 				</button>
+				<button type="button" class="rest-playground__btn rest-playground__btn--ghost rest-playground__get-code-btn" id="get-code">
+					<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
+						<polyline points="16 18 22 12 16 6"/>
+						<polyline points="8 6 2 12 8 18"/>
+					</svg>
+					<?php esc_html_e( 'Code', 'wp-rest-api-playground' ); ?>
+				</button>
 			</div>
 
 		</div><!-- /#rest-playground-endpoint -->
