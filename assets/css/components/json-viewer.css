@@ -1,0 +1,477 @@
+/* ==========================================================================
+   JSON viewer — view switch, JSONPath filter, collapsible tree.
+   ========================================================================== */
+
+/* Keyboard focus ring for every control in the viewer, matching the resizer and
+   collapse buttons. Listed once here rather than per-component. */
+.rest-playground__view-btn:focus-visible,
+.rest-playground__json-action:focus-visible,
+.rest-playground__json-filter-clear:focus-visible {
+	outline: 2px solid var(--rest-playground-accent);
+	outline-offset: 1px;
+}
+
+/* Visually hidden live region for tree announcements. */
+.rest-playground__json-live {
+	block-size: 1px;
+	clip-path: inset(50%);
+	inline-size: 1px;
+	overflow: hidden;
+	position: absolute;
+	white-space: nowrap;
+}
+
+/* Pane hosting the viewer scrolls its body only, so the toolbar stays put. */
+.rest-playground__resp-pane.has-json-viewer {
+	display: flex;
+	flex-direction: column;
+	overflow: hidden;
+}
+
+.rest-playground__json-view {
+	flex: 1;
+	min-height: 0;
+	overflow: auto;
+}
+
+.rest-playground__json-view::-webkit-scrollbar {
+	height: 5px;
+	width: 5px;
+}
+
+.rest-playground__json-view::-webkit-scrollbar-thumb {
+	background: var(--rest-playground-chrome-border);
+	border-radius: 3px;
+}
+
+/* --------------------------------------------------------------------------
+   Toolbar
+   -------------------------------------------------------------------------- */
+
+.rest-playground__json-toolbar {
+	align-items: center;
+	border-bottom: 1px solid var(--rest-playground-chrome-border);
+	display: flex;
+	flex-shrink: 0;
+	flex-wrap: wrap;
+	gap: 8px;
+	padding: 8px 10px;
+}
+
+.rest-playground__view-switch {
+	background: var(--rest-playground-chrome-surface);
+	border-radius: var(--rest-playground-radius);
+	display: flex;
+	flex-shrink: 0;
+	padding: 2px;
+}
+
+/* min-height keeps the pointer target at the 24px floor even when the fluid
+   font scale bottoms out on a narrow panel. */
+.rest-playground__view-btn {
+	background: none;
+	border: none;
+	border-radius: calc(var(--rest-playground-radius) - 2px);
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 600;
+	letter-spacing: 0.03em;
+	min-height: 24px;
+	padding: 4px 9px;
+	transition: background 0.15s, color 0.15s;
+}
+
+.rest-playground__view-btn:hover {
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__view-btn.is-active {
+	background: var(--rest-playground-accent);
+	color: var(--rest-playground-white);
+}
+
+/* Filter box */
+.rest-playground__json-filter {
+	display: flex;
+	flex: 1;
+	min-width: 140px;
+	position: relative;
+}
+
+.rest-playground__json-filter-input {
+	background: var(--rest-playground-chrome-surface);
+	border: 1px solid var(--rest-playground-chrome-border);
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-chrome-text);
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-sm);
+	padding-block: 5px;
+	padding-inline: 8px 24px;
+	width: 100%;
+}
+
+.rest-playground__json-filter-input::placeholder {
+	color: var(--rest-playground-chrome-muted);
+	opacity: 0.7;
+}
+
+.rest-playground__json-filter-input:focus {
+	border-color: var(--rest-playground-accent);
+	box-shadow: 0 0 0 3px var(--rest-playground-accent-light);
+	outline: none;
+}
+
+.rest-playground__json-filter-input[aria-invalid="true"] {
+	border-color: var(--rest-playground-error);
+}
+
+.rest-playground__json-filter-input:disabled {
+	cursor: not-allowed;
+	opacity: 0.45;
+}
+
+.rest-playground__json-filter-clear {
+	align-items: center;
+	background: none;
+	border: none;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	font-size: 16px;
+	inset-block: 0;
+	inset-inline-end: 0;
+	justify-content: center;
+	line-height: 1;
+	min-width: 24px;
+	padding-inline: 4px;
+	position: absolute;
+}
+
+.rest-playground__json-filter-clear:hover {
+	color: var(--rest-playground-chrome-text);
+}
+
+/* Expand / collapse */
+.rest-playground__json-tree-actions {
+	display: flex;
+	flex-shrink: 0;
+	gap: 2px;
+}
+
+.rest-playground__json-action {
+	align-items: center;
+	background: none;
+	border: 1px solid transparent;
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	height: 26px;
+	justify-content: center;
+	transition: background 0.15s, color 0.15s;
+	width: 26px;
+}
+
+.rest-playground__json-action:hover:not(:disabled) {
+	background: var(--rest-playground-chrome-hover);
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__json-action:disabled {
+	cursor: not-allowed;
+	opacity: 0.35;
+}
+
+.rest-playground__json-action svg {
+	height: 14px;
+	width: 14px;
+}
+
+/* Match / error line. Stays in the DOM when empty so it keeps working as a live
+   region; collapsing the padding is what hides it. */
+.rest-playground__json-status {
+	color: var(--rest-playground-chrome-muted);
+	flex-shrink: 0;
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-xs);
+	margin: 0;
+	padding: 5px 12px;
+}
+
+.rest-playground__json-status:empty {
+	padding: 0;
+}
+
+.rest-playground__json-status.is-warn {
+	background: rgba(245, 158, 11, 0.1);
+	color: var(--rest-playground-warning);
+}
+
+.rest-playground__json-status.is-error {
+	background: rgba(239, 68, 68, 0.1);
+	color: var(--rest-playground-error);
+}
+
+/* --------------------------------------------------------------------------
+   Tree
+   -------------------------------------------------------------------------- */
+
+.rest-playground__json-tree {
+	--rest-playground-json-indent: 13px;
+
+	/* Shared by the toggle and the spacer that stands in for it, so rows with and
+	   without children keep the same key alignment. */
+	--rest-playground-json-control: 16px;
+
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-base);
+	line-height: 1.65;
+	padding-block: 8px;
+}
+
+.rest-playground__json-row {
+	--rest-playground-json-pad: calc(8px + var(--rest-playground-json-depth, 0) * var(--rest-playground-json-indent));
+
+	align-items: baseline;
+	display: flex;
+	gap: 4px;
+	padding-block: 0;
+	padding-inline: var(--rest-playground-json-pad) 8px;
+	position: relative;
+}
+
+.rest-playground__json-row:hover {
+	background: var(--rest-playground-chrome-hover);
+}
+
+/* The row is the treeitem and the only focusable thing in it, so it carries the
+   focus ring. Styled on :focus, not :focus-visible — focus arrives here
+   programmatically from the roving tabindex and must always be visible. */
+.rest-playground__json-row:focus {
+	background: var(--rest-playground-accent-light);
+	outline: 2px solid var(--rest-playground-accent);
+	outline-offset: -2px;
+}
+
+.rest-playground__json-row.is-copied {
+	background: rgba(16, 185, 129, 0.16);
+}
+
+/* Disclosure triangle — a CSS shape rather than an SVG, since a large payload
+   can render thousands of these. */
+.rest-playground__json-toggle {
+	align-self: center;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: block;
+	flex-shrink: 0;
+	height: 20px;
+	position: relative;
+	width: var(--rest-playground-json-control);
+}
+
+.rest-playground__json-toggle::before {
+	border-block-end: 4px solid transparent;
+	border-block-start: 4px solid transparent;
+	border-inline-start: 5px solid currentcolor;
+	content: "";
+	inset-block-start: 50%;
+	inset-inline-start: 5px;
+	position: absolute;
+	transform: translateY(-50%);
+	transition: transform 0.12s ease;
+}
+
+.rest-playground__json-node.is-open > .rest-playground__json-row > .rest-playground__json-toggle::before {
+	transform: translateY(-50%) rotate(90deg);
+}
+
+/* RTL overrides — see the note at the bottom of this file for why these have to
+   be written with physical properties. */
+[dir="rtl"] .rest-playground__json-node.is-open > .rest-playground__json-row > .rest-playground__json-toggle::before {
+	transform: translateY(-50%) rotate(-90deg);
+}
+
+.rest-playground__json-toggle:hover {
+	color: var(--rest-playground-accent-soft);
+}
+
+.rest-playground__json-spacer {
+	flex-shrink: 0;
+	width: var(--rest-playground-json-control);
+}
+
+.rest-playground__json-key {
+	white-space: nowrap;
+}
+
+.rest-playground__json-index {
+	color: var(--rest-playground-chrome-muted);
+	white-space: nowrap;
+}
+
+.rest-playground__json-colon {
+	color: var(--rest-playground-chrome-muted);
+	margin-inline-start: -3px;
+}
+
+.rest-playground__json-value {
+
+	/* Flex items refuse to shrink below their content without this, which would
+	   push long strings past the panel edge instead of wrapping them. */
+	min-width: 0;
+	overflow-wrap: anywhere;
+	white-space: pre-wrap;
+}
+
+/* Long strings are rendered in full and clamped here rather than truncated in
+   JS, so screen readers get the whole value while the row stays three lines
+   tall. Flex items are blockified, so max-block-size applies. */
+.rest-playground__json-value.is-clipped {
+	cursor: pointer;
+	max-block-size: calc(1.65em * 3);
+	overflow: hidden;
+}
+
+.rest-playground__json-value.is-clipped.is-expanded {
+	max-block-size: none;
+}
+
+.rest-playground__json-value.is-clipped:hover {
+	text-decoration: underline dotted;
+}
+
+/* Muted enough to recede, opaque enough to clear 4.5:1 against the panel. */
+.rest-playground__json-summary {
+	color: var(--rest-playground-chrome-muted);
+	flex-shrink: 0;
+	opacity: 0.8;
+}
+
+.rest-playground__json-preview {
+	color: var(--rest-playground-chrome-muted);
+	flex: 1;
+	font-size: var(--rest-playground-font-xs);
+	min-width: 0;
+	opacity: 0.8;
+	overflow: hidden;
+	text-overflow: ellipsis;
+	white-space: nowrap;
+}
+
+.rest-playground__json-node.is-open > .rest-playground__json-row > .rest-playground__json-preview {
+	display: none;
+}
+
+/* Copy-path affordance. Pointer-only by design: it is aria-hidden and the
+   keyboard route is "c" on the focused row, which keeps the row as the tree's
+   single tab stop. */
+.rest-playground__json-path-btn {
+	align-items: center;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	flex-shrink: 0;
+	justify-content: center;
+	margin-inline-start: auto;
+	min-height: 20px;
+	min-width: 20px;
+	opacity: 0;
+	transition: opacity 0.12s, color 0.12s;
+}
+
+.rest-playground__json-path-btn::before {
+	content: "⧉";
+	font-size: 12px;
+}
+
+/* Revealed on hover, and on the focused row so keyboard users can see that the
+   "c" shortcut has something to act on. */
+.rest-playground__json-row:hover .rest-playground__json-path-btn,
+.rest-playground__json-row:focus .rest-playground__json-path-btn {
+	opacity: 1;
+}
+
+.rest-playground__json-path-btn:hover {
+	color: var(--rest-playground-chrome-text);
+}
+
+.rest-playground__json-row.is-copied .rest-playground__json-path-btn {
+	color: var(--rest-playground-success);
+	opacity: 1;
+}
+
+.rest-playground__json-row.is-copied .rest-playground__json-path-btn::before {
+	content: "✓";
+}
+
+/* Chunked reveal for very large containers. The "show more" row is a treeitem
+   like any other, so it inherits the row's indentation and focus handling. */
+.rest-playground__json-more {
+	cursor: pointer;
+	padding-block: 2px;
+}
+
+.rest-playground__json-more-label {
+	align-items: center;
+	border: 1px dashed var(--rest-playground-chrome-border);
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-chrome-muted);
+	display: flex;
+	font-size: var(--rest-playground-font-xs);
+	min-block-size: 22px;
+	padding-inline: 10px;
+}
+
+.rest-playground__json-more:hover .rest-playground__json-more-label,
+.rest-playground__json-more:focus .rest-playground__json-more-label {
+	border-color: var(--rest-playground-accent);
+	color: var(--rest-playground-accent-soft);
+}
+
+/* --------------------------------------------------------------------------
+   RTL
+
+   The build runs postcss-preset-env at stage 0, which compiles logical
+   properties down to their physical LTR equivalents. `padding-inline` above
+   therefore becomes `padding-left`, and in an RTL locale the indentation lands
+   on the trailing edge — every row starts at the same x and the hierarchy
+   reads as a flat list. The same flattening leaves the disclosure triangle
+   pointing the wrong way.
+
+   These overrides have to use physical properties: logical ones here would be
+   compiled away exactly like the rules they are correcting.
+   -------------------------------------------------------------------------- */
+
+[dir="rtl"] .rest-playground__json-row {
+	padding-left: 8px;
+	padding-right: var(--rest-playground-json-pad);
+}
+
+[dir="rtl"] .rest-playground__json-toggle::before {
+	border-left-width: 0;
+	border-right: 5px solid currentcolor;
+	left: auto;
+	right: 5px;
+}
+
+[dir="rtl"] .rest-playground__json-colon {
+	margin-left: -3px;
+	margin-right: 0;
+}
+
+[dir="rtl"] .rest-playground__json-path-btn {
+	margin-left: auto;
+	margin-right: 0;
+}
+
+[dir="rtl"] .rest-playground__json-filter-input {
+	padding-left: 24px;
+	padding-right: 8px;
+}
+
+[dir="rtl"] .rest-playground__json-filter-clear {
+	left: 0;
+	right: auto;
+}

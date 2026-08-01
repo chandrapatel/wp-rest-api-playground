@@ -13,4 +13,5 @@
 @import "./components/request-form.css";
 @import "./components/buttons.css";
 @import "./components/response-panel.css";
+@import "./components/json-viewer.css";
 @import "./components/utilities.css";
