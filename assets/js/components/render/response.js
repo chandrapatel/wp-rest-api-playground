@@ -2,12 +2,22 @@
  * WP REST API Playground — Response panel renderer.
  */
 
-import { escapeHtml, syntaxHighlight, statusModifier } from '../utils';
+import { copyText, escapeHtml, statusModifier } from '../utils';
 import { generateJsCode, generatePhpCode, generateCurlCode } from '../generateCode';
+import { mountJsonViewer, mountTextViewer } from './jsonViewer';
+
+/**
+ * Viewer currently mounted in the Body pane. The copy button lives in the
+ * response header, outside the pane, so it reads what is on screen from here.
+ *
+ * @type {{ getVisibleText: () => string }|null}
+ */
+let activeViewer = null;
 
 export const showResponseLoading = () => {
 	const meta = document.getElementById('response-meta');
 	const body = document.getElementById('response-body');
+	activeViewer = null;
 	if (meta) meta.innerHTML = '';
 	if (body) {
 		body.innerHTML = `
@@ -28,6 +38,8 @@ export const showResponseLoading = () => {
 export const renderResponseError = (message, duration) => {
 	const metaEl = document.getElementById('response-meta');
 	const bodyEl = document.getElementById('response-body');
+
+	activeViewer = null;
 
 	if (metaEl) {
 		metaEl.innerHTML = `
@@ -127,6 +139,7 @@ const attachTabHandlers = (bodyEl) => {
  * @param {number} opts.status - HTTP status code.
  * @param {string} opts.statusText - HTTP status text.
  * @param {unknown} opts.data - Parsed response body.
+ * @param {string} opts.rawText - Unparsed response body, shown in the Raw view.
  * @param {boolean} opts.isJson - Whether the response is JSON.
  * @param {number} opts.duration - Request duration in milliseconds.
  * @param {Headers} opts.headers - Response headers object.
@@ -137,6 +150,7 @@ export const renderResponse = ({
 	status,
 	statusText,
 	data,
+	rawText,
 	isJson,
 	duration,
 	headers,
@@ -162,25 +176,24 @@ export const renderResponse = ({
 			</button>
 		`;
 
-		document.getElementById('copy-response')?.addEventListener('click', () => {
-			const text = isJson ? JSON.stringify(data, null, 2) : String(data);
-			navigator.clipboard?.writeText(text).then(() => {
-				const btn = document.getElementById('copy-response');
-				if (btn) {
-					btn.classList.add('is-copied');
-					btn.title = 'Copied!';
-					setTimeout(() => {
-						btn.classList.remove('is-copied');
-						btn.title = 'Copy response';
-					}, 2000);
-				}
-			});
+		document.getElementById('copy-response')?.addEventListener('click', async () => {
+			// Copies what the Body pane is showing — filtered result, raw text or
+			// the whole document — rather than always the unfiltered payload.
+			const text = activeViewer?.getVisibleText() ?? String(rawText ?? '');
+			const copied = await copyText(text);
+
+			const btn = document.getElementById('copy-response');
+			if (!btn) return;
+
+			btn.classList.toggle('is-copied', copied);
+			btn.classList.toggle('is-copy-failed', !copied);
+			btn.title = copied ? 'Copied!' : 'Copy failed — clipboard unavailable';
+			setTimeout(() => {
+				btn.classList.remove('is-copied', 'is-copy-failed');
+				btn.title = 'Copy response';
+			}, 2000);
 		});
 	}
-
-	const formattedBody = isJson
-		? syntaxHighlight(data)
-		: `<span class="json-string">${escapeHtml(String(data))}</span>`;
 
 	// Serialize headers for display.
 	const headerObj = /** @type {Record<string,string>} */ ({});
@@ -189,7 +202,6 @@ export const renderResponse = ({
 			headerObj[key] = val;
 		});
 	}
-	const formattedHeaders = syntaxHighlight(headerObj);
 
 	const jsCode = requestUrl && requestOptions ? generateJsCode(requestUrl, requestOptions) : '';
 	const phpCode = requestUrl && requestOptions ? generatePhpCode(requestUrl, requestOptions) : '';
@@ -203,16 +215,27 @@ export const renderResponse = ({
 				<button class="rest-playground__resp-tab" data-tab="headers" type="button" role="tab" aria-selected="false">Headers</button>
 				<button class="rest-playground__resp-tab" data-tab="code" type="button" role="tab" aria-selected="false">Code</button>
 			</div>
-			<div id="resp-body-pane" class="rest-playground__resp-pane">
-				<pre class="rest-playground__json-output">${formattedBody}</pre>
-			</div>
-			<div id="resp-headers-pane" class="rest-playground__resp-pane" hidden>
-				<pre class="rest-playground__json-output">${formattedHeaders}</pre>
-			</div>
+			<div id="resp-body-pane" class="rest-playground__resp-pane"></div>
+			<div id="resp-headers-pane" class="rest-playground__resp-pane" hidden></div>
 			<div id="resp-code-pane" class="rest-playground__resp-pane" hidden>
 				${buildCodePanesHtml(jsCode, phpCode, curlCode)}
 			</div>
 		`;
+
+		const bodyPane = bodyEl.querySelector('#resp-body-pane');
+		if (bodyPane) {
+			activeViewer = isJson
+				? mountJsonViewer(bodyPane, {
+						data,
+						rawText: rawText ?? JSON.stringify(data, null, 2),
+					})
+				: mountTextViewer(bodyPane, String(rawText ?? data));
+		}
+
+		const headersPane = bodyEl.querySelector('#resp-headers-pane');
+		if (headersPane) {
+			mountJsonViewer(headersPane, { data: headerObj, rawText: '', showToolbar: false });
+		}
 
 		attachTabHandlers(bodyEl);
 	}
@@ -229,6 +252,7 @@ export const renderCodeOnly = (requestUrl, requestOptions) => {
 	const metaEl = document.getElementById('response-meta');
 	const bodyEl = document.getElementById('response-body');
 
+	activeViewer = null;
 	if (metaEl) metaEl.innerHTML = '';
 
 	const jsCode = generateJsCode(requestUrl, requestOptions);

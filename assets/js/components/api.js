@@ -157,19 +157,27 @@ export const onSendRequest = async () => {
 		const duration = Math.round(performance.now() - startTime);
 
 		const contentType = response.headers.get('content-type') ?? '';
-		const isJson = contentType.includes('application/json');
 
-		let data;
-		if (isJson) {
-			data = await response.json();
-		} else {
-			data = await response.text();
+		// Read the body as text first so the Raw view can show exactly what the
+		// server sent, rather than a re-serialisation of the parsed value.
+		const rawText = await response.text();
+		let data = rawText;
+		let isJson = false;
+
+		if (contentType.includes('application/json')) {
+			try {
+				data = JSON.parse(rawText);
+				isJson = true;
+			} catch {
+				// A malformed JSON body still has to be displayed; fall back to text.
+			}
 		}
 
 		renderResponse({
 			status: response.status,
 			statusText: response.statusText,
 			data,
+			rawText,
 			isJson,
 			duration,
 			headers: response.headers,

@@ -44,13 +44,21 @@ export const extractPathParams = (route) => {
 };
 
 /**
- * Simple JSON syntax highlighter — assumes the input is already HTML-escaped.
+ * Simple JSON syntax highlighter.
+ *
+ * Matching runs against the unescaped JSON and each token is escaped as it is
+ * wrapped. Escaping up front instead would turn every `"` into `&quot;` before
+ * the pattern sees it, so keys and string values would never match. Everything
+ * left unmatched is JSON structure — braces, brackets, commas, colons and
+ * whitespace — none of which is HTML-significant.
  *
  * @param {unknown} data  Plain JS value (object, array, string, number …)
  * @returns {string}      HTML string with <span> highlighting.
  */
 export const syntaxHighlight = (data) => {
-	const json = escapeHtml(JSON.stringify(data, null, 2));
+	const json = JSON.stringify(data, null, 2);
+	if (json === undefined) return escapeHtml(String(data));
+
 	return json.replace(
 		/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+-]?\d+)?)/g,
 		(match) => {
@@ -62,9 +70,31 @@ export const syntaxHighlight = (data) => {
 			} else if (/null/.test(match)) {
 				cls = 'json-null';
 			}
-			return `<span class="${cls}">${match}</span>`;
+			return `<span class="${cls}">${escapeHtml(match)}</span>`;
 		},
 	);
+};
+
+/**
+ * Copy text to the clipboard, reporting whether it worked.
+ *
+ * `navigator.clipboard` is undefined outside secure contexts, which this
+ * plugin explicitly supports — it warns about plain HTTP rather than refusing
+ * to run — and `writeText()` rejects when permission is denied or the document
+ * is not focused. Callers need both to surface as a failed copy instead of a
+ * silent no-op with an unhandled rejection behind it.
+ *
+ * @param {string} text - Text to place on the clipboard.
+ * @returns {Promise<boolean>} Whether the copy succeeded.
+ */
+export const copyText = async (text) => {
+	if (!navigator.clipboard?.writeText) return false;
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch {
+		return false;
+	}
 };
 
 /**
