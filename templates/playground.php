@@ -53,12 +53,21 @@ if ( ! defined( 'ABSPATH' ) ) {
 			return isFinite(value) ? value : fallback;
 		};
 
-		// `ratio` is the stylesheet default, used to estimate a panel the user
-		// has never resized so the fit check below can account for its width.
 		var panels = [
-			{ key: 'sidebar', prop: '--rest-playground-sidebar-w', min: '--rest-playground-sidebar-min', max: '--rest-playground-sidebar-max', ratio: 0.2 },
-			{ key: 'response', prop: '--rest-playground-response-w', min: '--rest-playground-response-min', max: '--rest-playground-response-max', ratio: 0.3 }
+			{ key: 'sidebar', prop: '--rest-playground-sidebar-w', min: '--rest-playground-sidebar-min', max: '--rest-playground-sidebar-max' },
+			{ key: 'response', prop: '--rest-playground-response-w', min: '--rest-playground-response-min', max: '--rest-playground-response-max' }
 		];
+
+		// Width of a panel the user has never resized, read from the stylesheet
+		// default rather than duplicating the 20%/30% ratios here, so the fit
+		// check below cannot drift when variables.css changes. Runs before any
+		// setProperty call, so it always sees the authored value.
+		var defaultWidth = function (prop) {
+			var raw = styles.getPropertyValue(prop).trim();
+			var value = parseFloat(raw);
+			if (!isFinite(value)) return 0;
+			return raw.slice(-1) === '%' ? (window.innerWidth * value) / 100 : value;
+		};
 
 		var widths = panels.map(function (panel) {
 			var entry = saved[panel.key];
@@ -69,7 +78,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		});
 
 		var used = widths.reduce(function (total, width, i) {
-			return total + (width === null ? window.innerWidth * panels[i].ratio : width);
+			return total + (width === null ? defaultWidth(panels[i].prop) : width);
 		}, 0);
 		var excess = used + num('--rest-playground-main-min', 360) - window.innerWidth;
 

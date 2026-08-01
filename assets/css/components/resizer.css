@@ -27,6 +27,17 @@
 	margin-inline-end: calc(var(--rest-playground-resizer-w) / -2);
 }
 
+/* Collapsed, the seam is the viewport edge, so centring would push half the
+   handle out of view — clipping the focus ring and halving the drag target
+   just when dragging is one of the two ways back. */
+.rest-playground__resizer--sidebar.is-collapsed {
+	margin-inline-start: 0;
+}
+
+.rest-playground__resizer--response.is-collapsed {
+	margin-inline-end: 0;
+}
+
 /* Accent bar. Transparent at rest so the 1px panel borders stay the seam. */
 .rest-playground__resizer::after {
 	background: transparent;

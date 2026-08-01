@@ -138,7 +138,14 @@ const persist = () => {
 	}
 };
 
-const isMobile = () => window.matchMedia(MOBILE_QUERY).matches;
+/*
+ * Held in a module const rather than re-queried: isMobile() runs inside the
+ * drag loop, and a MediaQueryList must stay referenced for its change listener
+ * to remain reliable.
+ */
+const mobileQuery = window.matchMedia(MOBILE_QUERY);
+
+const isMobile = () => mobileQuery.matches;
 
 // Dragging right must grow the *leading* panel, whichever side that is.
 const flowSign = () => (root.dir === 'rtl' ? -1 : 1);
@@ -244,6 +251,7 @@ const apply = () => {
 			const { resizer, panel: el } = els[panel.key];
 			el.removeAttribute('inert');
 			el.classList.remove('is-collapsed');
+			resizer.classList.remove('is-collapsed');
 			resizer.tabIndex = -1;
 		});
 		return;
@@ -264,6 +272,10 @@ const apply = () => {
 
 		const collapsed = entries[panel.key]?.collapsed === true;
 		el.classList.toggle('is-collapsed', collapsed);
+
+		// The handle sits at the viewport edge once collapsed; resizer.css drops
+		// its centring offset so it stays fully on-screen and draggable back out.
+		resizer.classList.toggle('is-collapsed', collapsed);
 
 		// A zero-width panel is only *visually* gone: its controls stay in the tab
 		// order and the accessibility tree, so focus and screen readers walk into
@@ -332,7 +344,9 @@ const bindResizer = (panel) => {
 	const { resizer, button } = els[panel.key];
 
 	resizer.addEventListener('pointerdown', (event) => {
-		if (isMobile() || (event.pointerType === 'mouse' && event.button !== 0)) return;
+		// `drag` is single-slot: a second touch on the other handle would
+		// otherwise overwrite it and strand the first in its dragging state.
+		if (drag || isMobile() || (event.pointerType === 'mouse' && event.button !== 0)) return;
 
 		// No preventDefault() here: it would suppress the compatibility mouse
 		// events and with them the dblclick-to-reset handler below. Text
@@ -431,5 +445,5 @@ export const initLayout = () => {
 	});
 
 	// Re-apply when crossing back above the stacking breakpoint.
-	window.matchMedia(MOBILE_QUERY).addEventListener('change', apply);
+	mobileQuery.addEventListener('change', apply);
 };
