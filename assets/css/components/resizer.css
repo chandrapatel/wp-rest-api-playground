@@ -85,6 +85,16 @@
 	margin-inline-end: -11px;
 }
 
+/* Collapsed, the seam sits at the viewport edge and the centring offset would
+   push half the button off-screen — just when it is the only way back. */
+.rest-playground__collapse-btn--sidebar[aria-expanded="false"] {
+	margin-inline-start: 0;
+}
+
+.rest-playground__collapse-btn--response[aria-expanded="false"] {
+	margin-inline-end: 0;
+}
+
 .rest-playground__collapse-btn svg {
 	height: 12px;
 	pointer-events: none;

@@ -251,6 +251,16 @@ const apply = () => {
 
 		const collapsed = entries[panel.key]?.collapsed === true;
 		el.classList.toggle('is-collapsed', collapsed);
+
+		// A zero-width panel is only *visually* gone: its controls stay in the tab
+		// order and the accessibility tree, so focus and screen readers walk into
+		// an off-screen panel. inert removes both without touching layout, which
+		// `hidden` would (display: none drops the grid item and the remaining
+		// panels shift into the wrong tracks). The toggle button is a sibling of
+		// the panel, so it stays reachable to expand again.
+		if (collapsed && el.contains(el.ownerDocument.activeElement)) button.focus();
+		el.toggleAttribute('inert', collapsed);
+
 		button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 
 		// A collapsed panel legitimately sits at 0, which would fall outside the
