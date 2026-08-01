@@ -182,6 +182,12 @@ export const mountJsonViewer = (container, { data, rawText, showToolbar = true }
 		const query = filterInput?.value.trim() ?? '';
 		if (clearBtn) clearBtn.hidden = !query;
 
+		// A debounce scheduled just before the user switched to Raw can still land
+		// here. Raw is unfiltered by definition, so it must not repaint or report
+		// a match count; setView() re-runs the query when a filterable view
+		// becomes active again.
+		if (view === 'raw') return;
+
 		if (!query) {
 			filtered = data;
 			filterActive = false;
@@ -237,14 +243,16 @@ export const mountJsonViewer = (container, { data, rawText, showToolbar = true }
 			filterInput.disabled = view === 'raw';
 			filterInput.title = view === 'raw' ? 'Filtering is unavailable in Raw view' : '';
 		}
-		if (view === 'raw' && filterActive) {
-			setStatus('Filter not applied in Raw view', 'warn');
+		if (view === 'raw') {
+			// Report against what is actually in the box, not filterActive, so a
+			// query typed inside the debounce window is still accounted for.
+			const pending = filterInput?.value.trim();
+			setStatus(pending ? 'Filter not applied in Raw view' : '', pending ? 'warn' : 'none');
 			paint();
-		} else if (view !== 'raw' && filterActive) {
-			// Re-runs the query and repaints in one pass.
-			applyFilter();
 		} else {
-			paint();
+			// Re-evaluates whatever is in the box — including a query typed just
+			// before a switch to Raw — and repaints in one pass.
+			applyFilter();
 		}
 	};
 
