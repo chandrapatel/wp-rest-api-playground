@@ -406,6 +406,15 @@
 	content: "✓";
 }
 
+.rest-playground__json-row.is-copy-failed .rest-playground__json-path-btn {
+	color: var(--rest-playground-error);
+	opacity: 1;
+}
+
+.rest-playground__json-row.is-copy-failed .rest-playground__json-path-btn::before {
+	content: "✕";
+}
+
 /* Chunked reveal for very large containers. The "show more" row is a treeitem
    like any other, so it inherits the row's indentation and focus handling. */
 .rest-playground__json-more {

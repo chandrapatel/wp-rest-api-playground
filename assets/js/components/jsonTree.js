@@ -16,6 +16,7 @@
  */
 
 import { formatPath } from './jsonPath';
+import { copyText } from './utils';
 
 /** Children rendered per "Show more" step. */
 const CHUNK_SIZE = 200;
@@ -532,15 +533,20 @@ const toggleClamp = (valueEl) => {
  * @param {HTMLElement} tree - The [role=tree] element.
  * @param {HTMLElement} row  - Row to copy the path of.
  */
-const copyPathOf = (tree, row) => {
+const copyPathOf = async (tree, row) => {
 	const data = nodeData.get(nodeOf(row));
 	if (!data) return;
+
 	const path = formatPath(data.path);
-	navigator.clipboard?.writeText(path).then(() => {
-		row.classList.add('is-copied');
-		setTimeout(() => row.classList.remove('is-copied'), 1500);
-		announce(tree, `Copied ${path}`);
-	});
+	const copied = await copyText(path);
+
+	row.classList.toggle('is-copied', copied);
+	row.classList.toggle('is-copy-failed', !copied);
+	setTimeout(() => row.classList.remove('is-copied', 'is-copy-failed'), 1500);
+
+	// On failure the path still goes to the live region, so a screen reader user
+	// hears it even when the clipboard is unavailable.
+	announce(tree, copied ? `Copied ${path}` : `Copy failed. Path is ${path}`);
 };
 
 /**

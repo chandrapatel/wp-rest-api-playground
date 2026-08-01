@@ -100,6 +100,13 @@
 	color: var(--rest-playground-success);
 }
 
+/* The clipboard API is absent outside secure contexts, so a copy can genuinely
+   fail on a plain-HTTP site. Say so rather than appearing to do nothing. */
+.rest-playground__copy-btn.is-copy-failed {
+	border-color: var(--rest-playground-error);
+	color: var(--rest-playground-error);
+}
+
 .rest-playground__copy-btn svg {
 	height: 14px;
 	width: 14px;

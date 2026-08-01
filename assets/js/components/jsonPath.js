@@ -85,6 +85,39 @@ const readQuoted = (src, i) => {
 };
 
 /**
+ * Skip a `/…/flags` regex literal starting at `i`.
+ *
+ * Both scanners below have to step over these without looking inside, or a
+ * pattern like `/\)/` unbalances the parenthesis count and `/a||b/` gets split
+ * as if its alternation were a top-level operator. A `/` inside a character
+ * class does not end the literal, so classes are tracked too.
+ *
+ * @param {string} src - Expression source.
+ * @param {number} i   - Index of the opening slash.
+ * @returns {{ next: number }|null} Null when unterminated, so the caller can
+ * treat the slash as an ordinary character.
+ */
+const readRegex = (src, i) => {
+	let j = i + 1;
+	let inClass = false;
+	let end = -1;
+
+	while (j < src.length && end === -1) {
+		const ch = src[j];
+		if (ch === '\\') {
+			j += 2;
+		} else {
+			if (ch === '[') inClass = true;
+			else if (ch === ']') inClass = false;
+			else if (ch === '/' && !inClass) end = j + 1;
+			j += 1;
+		}
+	}
+
+	return end === -1 ? null : { next: end };
+};
+
+/**
  * Read a bare key name up to the next `.` or `[`.
  *
  * @param {string} src - Full query source.
@@ -100,8 +133,8 @@ const readName = (src, i) => {
 };
 
 /**
- * Split on a top-level operator, ignoring occurrences inside quotes or
- * parentheses.
+ * Split on a top-level operator, ignoring occurrences inside quotes, regex
+ * literals or parentheses.
  *
  * @param {string} src - Expression source.
  * @param {string} op  - Two-character operator, e.g. `&&`.
@@ -118,6 +151,8 @@ const splitTop = (src, op) => {
 
 		if (ch === "'" || ch === '"') {
 			i = readQuoted(src, i).next;
+		} else if (ch === '/') {
+			i = readRegex(src, i)?.next ?? i + 1;
 		} else if (depth === 0 && src.startsWith(op, i)) {
 			parts.push(src.slice(start, i));
 			i += op.length;
@@ -237,6 +272,8 @@ const parseBracket = (src, i) => {
 			const ch = src[j];
 			if (ch === "'" || ch === '"') {
 				j = readQuoted(src, j).next;
+			} else if (ch === '/' && j > start) {
+				j = readRegex(src, j)?.next ?? j + 1;
 			} else {
 				if (ch === '(') depth += 1;
 				else if (ch === ')') depth -= 1;

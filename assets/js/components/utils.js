@@ -76,6 +76,28 @@ export const syntaxHighlight = (data) => {
 };
 
 /**
+ * Copy text to the clipboard, reporting whether it worked.
+ *
+ * `navigator.clipboard` is undefined outside secure contexts, which this
+ * plugin explicitly supports — it warns about plain HTTP rather than refusing
+ * to run — and `writeText()` rejects when permission is denied or the document
+ * is not focused. Callers need both to surface as a failed copy instead of a
+ * silent no-op with an unhandled rejection behind it.
+ *
+ * @param {string} text - Text to place on the clipboard.
+ * @returns {Promise<boolean>} Whether the copy succeeded.
+ */
+export const copyText = async (text) => {
+	if (!navigator.clipboard?.writeText) return false;
+	try {
+		await navigator.clipboard.writeText(text);
+		return true;
+	} catch {
+		return false;
+	}
+};
+
+/**
  * Determine the CSS modifier for an HTTP status code.
  *
  * @param {number} status - The HTTP status code.

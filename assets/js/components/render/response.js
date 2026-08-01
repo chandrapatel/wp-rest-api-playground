@@ -2,7 +2,7 @@
  * WP REST API Playground — Response panel renderer.
  */
 
-import { escapeHtml, statusModifier } from '../utils';
+import { copyText, escapeHtml, statusModifier } from '../utils';
 import { generateJsCode, generatePhpCode, generateCurlCode } from '../generateCode';
 import { mountJsonViewer, mountTextViewer } from './jsonViewer';
 
@@ -176,21 +176,22 @@ export const renderResponse = ({
 			</button>
 		`;
 
-		document.getElementById('copy-response')?.addEventListener('click', () => {
+		document.getElementById('copy-response')?.addEventListener('click', async () => {
 			// Copies what the Body pane is showing — filtered result, raw text or
 			// the whole document — rather than always the unfiltered payload.
 			const text = activeViewer?.getVisibleText() ?? String(rawText ?? '');
-			navigator.clipboard?.writeText(text).then(() => {
-				const btn = document.getElementById('copy-response');
-				if (btn) {
-					btn.classList.add('is-copied');
-					btn.title = 'Copied!';
-					setTimeout(() => {
-						btn.classList.remove('is-copied');
-						btn.title = 'Copy response';
-					}, 2000);
-				}
-			});
+			const copied = await copyText(text);
+
+			const btn = document.getElementById('copy-response');
+			if (!btn) return;
+
+			btn.classList.toggle('is-copied', copied);
+			btn.classList.toggle('is-copy-failed', !copied);
+			btn.title = copied ? 'Copied!' : 'Copy failed — clipboard unavailable';
+			setTimeout(() => {
+				btn.classList.remove('is-copied', 'is-copy-failed');
+				btn.title = 'Copy response';
+			}, 2000);
 		});
 	}
 
