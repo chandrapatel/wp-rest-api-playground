@@ -44,4 +44,10 @@
 		border-top: 1px solid var(--rest-playground-chrome-border);
 		min-height: 400px;
 	}
+
+	/* Single-column stack — there are no vertical seams left to drag. */
+	.rest-playground__resizer,
+	.rest-playground__collapse-btn {
+		display: none;
+	}
 }

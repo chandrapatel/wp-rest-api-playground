@@ -22,6 +22,19 @@ if ( ! defined( 'ABSPATH' ) ) {
 	<meta name="robots" content="noindex, nofollow">
 	<title><?php esc_html_e( 'REST API Playground', 'wp-rest-api-playground' ); ?> &mdash; <?php bloginfo( 'name' ); ?></title>
 	<?php wp_head(); ?>
+	<?php
+	/*
+	 * Apply saved panel widths before first paint. The stylesheet loads in the
+	 * head but the bundle is a footer script, so without this the layout would
+	 * visibly jump from the 20%/30% defaults to the stored sizes on every load.
+	 * Deliberately minimal — clamping, collapse classes and ARIA state are all
+	 * handled by assets/js/components/layout.js on init.
+	 */
+	wp_print_inline_script_tag(
+		'try{var s=localStorage.getItem("wp-rest-playground-layout");if(s){var l=JSON.parse(s),r=document.documentElement,p={sidebar:"--rest-playground-sidebar-w",response:"--rest-playground-response-w"};Object.keys(p).forEach(function(k){var e=l&&l[k];if(!e)return;if(e.collapsed===true){r.style.setProperty(p[k],"0px");return}if(typeof e.width==="number"&&isFinite(e.width)&&e.width>0){r.style.setProperty(p[k],e.width+"px")}})}}catch(e){}',
+		[ 'id' => 'wp-rest-playground-layout-preload' ]
+	);
+	?>
 </head>
 <body class="rest-playground-body">
 
@@ -196,6 +209,51 @@ if ( ! defined( 'ABSPATH' ) ) {
 		</div>
 
 	</aside><!-- /.rest-playground__response-panel -->
+
+	<!-- ── Resize handles ────────────────────────────────────────── -->
+	<div
+		class="rest-playground__resizer rest-playground__resizer--sidebar"
+		id="resizer-sidebar"
+		role="separator"
+		aria-orientation="vertical"
+		aria-controls="rest-playground-sidebar"
+		aria-label="<?php esc_attr_e( 'Resize endpoints sidebar', 'wp-rest-api-playground' ); ?>"
+		tabindex="0"
+	></div>
+	<button
+		type="button"
+		class="rest-playground__collapse-btn rest-playground__collapse-btn--sidebar"
+		id="collapse-sidebar"
+		aria-controls="rest-playground-sidebar"
+		aria-expanded="true"
+		aria-label="<?php esc_attr_e( 'Collapse endpoints sidebar', 'wp-rest-api-playground' ); ?>"
+	>
+		<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M10 3L5 8l5 5"/>
+		</svg>
+	</button>
+
+	<div
+		class="rest-playground__resizer rest-playground__resizer--response"
+		id="resizer-response"
+		role="separator"
+		aria-orientation="vertical"
+		aria-controls="rest-playground-response"
+		aria-label="<?php esc_attr_e( 'Resize response panel', 'wp-rest-api-playground' ); ?>"
+		tabindex="0"
+	></div>
+	<button
+		type="button"
+		class="rest-playground__collapse-btn rest-playground__collapse-btn--response"
+		id="collapse-response"
+		aria-controls="rest-playground-response"
+		aria-expanded="true"
+		aria-label="<?php esc_attr_e( 'Collapse response panel', 'wp-rest-api-playground' ); ?>"
+	>
+		<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+			<path d="M10 3L5 8l5 5"/>
+		</svg>
+	</button>
 
 </div><!-- /#rest-playground -->
 

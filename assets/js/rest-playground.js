@@ -14,11 +14,15 @@ import {
 	clearAuth,
 	setAuthFormVisible,
 } from './components/auth';
+import { initLayout } from './components/layout';
 import { renderSidebar } from './components/render/sidebar';
 import { onSendRequest, onGetCode } from './components/api';
 import { onSearch } from './components/search';
 
 const init = async () => {
+	// Must not wait on the routes fetch below — the panels are visible immediately.
+	initLayout();
+
 	loadAuthFromStorage();
 	updateAuthStatus();
 

@@ -4,9 +4,18 @@
 
 :root {
 
-	/* Layout */
+	/* Layout — the two column widths are overwritten inline on <html> by
+	   components/layout.js once the user drags a divider. */
 	--rest-playground-sidebar-w: 20%;
 	--rest-playground-response-w: 30%;
+
+	/* Resize limits — read back by layout.js so they live in one place. */
+	--rest-playground-resizer-w: 7px;
+	--rest-playground-sidebar-min: 200px;
+	--rest-playground-sidebar-max: 560px;
+	--rest-playground-response-min: 260px;
+	--rest-playground-response-max: 720px;
+	--rest-playground-main-min: 360px;
 
 	/* Font sizes — fluid scale:
 	   clamp(min @ ~1280px, vw-based fluid, max @ ~2560px) */

@@ -9,6 +9,7 @@
 @import "./components/sidebar.css";
 @import "./components/navigation.css";
 @import "./components/main-panel.css";
+@import "./components/resizer.css";
 @import "./components/request-form.css";
 @import "./components/buttons.css";
 @import "./components/response-panel.css";
