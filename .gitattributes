@@ -1,0 +1,23 @@
+# Line endings.
+#
+# Git for Windows installs with core.autocrlf=true by default, which rewrites
+# every text file to CRLF on checkout. The repository has always stored LF, so
+# that leaves the working tree at odds with prettier's endOfLine: 'lf' and
+# produces a "Delete ␍" error on effectively every line of every file.
+#
+# eol=lf pins the *working tree* to LF as well, and takes precedence over
+# whatever core.autocrlf a given clone happens to have.
+* text=auto eol=lf
+
+# Binary assets — never normalize or diff as text.
+*.woff2 binary
+*.woff  binary
+*.ttf   binary
+*.eot   binary
+*.otf   binary
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.gif   binary
+*.ico   binary
+*.webp  binary

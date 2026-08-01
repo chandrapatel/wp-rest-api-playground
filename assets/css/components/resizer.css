@@ -1,0 +1,158 @@
+/* ==========================================================================
+   Resizer — draggable column dividers and collapse toggles.
+
+   The handles are absolutely positioned children of .rest-playground rather
+   than extra grid tracks, so the three-column grid declaration in base.css is
+   untouched. They track the seams by reading the same custom properties that
+   size the outer tracks.
+   ========================================================================== */
+
+.rest-playground__resizer {
+	cursor: col-resize;
+	inset-block: 0;
+	position: absolute;
+	touch-action: none;
+	width: var(--rest-playground-resizer-w);
+	z-index: 20;
+}
+
+/* Straddle the seam: the handle is centred on the track boundary. */
+.rest-playground__resizer--sidebar {
+	inset-inline-start: var(--rest-playground-sidebar-w);
+	margin-inline-start: calc(var(--rest-playground-resizer-w) / -2);
+}
+
+.rest-playground__resizer--response {
+	inset-inline-end: var(--rest-playground-response-w);
+	margin-inline-end: calc(var(--rest-playground-resizer-w) / -2);
+}
+
+/* Collapsed, the seam is the viewport edge, so centring would push half the
+   handle out of view — clipping the focus ring and halving the drag target
+   just when dragging is one of the two ways back. */
+.rest-playground__resizer--sidebar.is-collapsed {
+	margin-inline-start: 0;
+}
+
+.rest-playground__resizer--response.is-collapsed {
+	margin-inline-end: 0;
+}
+
+/* Accent bar. Transparent at rest so the 1px panel borders stay the seam. */
+.rest-playground__resizer::after {
+	background: transparent;
+	content: "";
+	inset-block: 0;
+	inset-inline-start: 50%;
+	margin-inline-start: -1px;
+	position: absolute;
+	transition: background 0.15s ease;
+	width: 2px;
+}
+
+.rest-playground__resizer:hover::after,
+.rest-playground__resizer:focus-visible::after,
+.rest-playground__resizer.is-dragging::after {
+	background: var(--rest-playground-accent);
+}
+
+.rest-playground__resizer:focus-visible {
+	outline: 2px solid var(--rest-playground-accent);
+	outline-offset: 1px;
+}
+
+/* Collapse toggle — sits on the same seam, centred vertically. */
+.rest-playground__collapse-btn {
+	align-items: center;
+	background: var(--rest-playground-chrome-surface);
+	border: 1px solid var(--rest-playground-chrome-border);
+	border-radius: 50%;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: flex;
+	height: 22px;
+	inset-block-start: 50%;
+	justify-content: center;
+	margin-block-start: -11px;
+	opacity: 0;
+	padding: 0;
+
+	/* Hidden means unclickable — otherwise it silently swallows drags aimed at
+	   the middle of the divider. Keyboard focus is unaffected. */
+	pointer-events: none;
+	position: absolute;
+	transition: opacity 0.15s ease, background 0.15s ease, color 0.15s ease;
+	width: 22px;
+	z-index: 21;
+}
+
+.rest-playground__collapse-btn--sidebar {
+	inset-inline-start: var(--rest-playground-sidebar-w);
+	margin-inline-start: -11px;
+}
+
+.rest-playground__collapse-btn--response {
+	inset-inline-end: var(--rest-playground-response-w);
+	margin-inline-end: -11px;
+}
+
+/* Collapsed, the seam sits at the viewport edge and the centring offset would
+   push half the button off-screen — just when it is the only way back. */
+.rest-playground__collapse-btn--sidebar[aria-expanded="false"] {
+	margin-inline-start: 0;
+}
+
+.rest-playground__collapse-btn--response[aria-expanded="false"] {
+	margin-inline-end: 0;
+}
+
+.rest-playground__collapse-btn svg {
+	height: 12px;
+	pointer-events: none;
+	width: 12px;
+}
+
+/* Sidebar chevron points at the panel it hides; flipped once collapsed. */
+.rest-playground__collapse-btn--response svg,
+.rest-playground__collapse-btn--sidebar[aria-expanded="false"] svg {
+	transform: rotate(180deg);
+}
+
+.rest-playground__collapse-btn--response[aria-expanded="false"] svg {
+	transform: none;
+}
+
+.rest-playground:hover .rest-playground__collapse-btn,
+.rest-playground__collapse-btn:focus-visible,
+.rest-playground__collapse-btn[aria-expanded="false"] {
+	opacity: 1;
+	pointer-events: auto;
+}
+
+.rest-playground__collapse-btn:hover {
+	background: var(--rest-playground-accent);
+	border-color: var(--rest-playground-accent);
+	color: var(--rest-playground-white);
+}
+
+/* Touch and pen have no hover to reveal the toggle with, which would leave
+   collapsing unreachable on tablets wide enough to keep the handles. */
+@media (hover: none) {
+
+	.rest-playground__collapse-btn {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}
+
+/* A zero-width panel would still paint its 1px divider. */
+.rest-playground__sidebar.is-collapsed {
+	border-right-width: 0;
+}
+
+/* Keep the cursor and suppress text selection for the whole drag gesture,
+   including the frames where the pointer leaves the handle. */
+.rest-playground-body.is-resizing {
+	cursor: col-resize;
+	user-select: none;
+}

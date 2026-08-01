@@ -30,4 +30,7 @@
 	grid-template-rows: 100%;
 	height: 100%;
 	overflow: hidden;
+
+	/* Containing block for the absolutely positioned resize handles. */
+	position: relative;
 }
