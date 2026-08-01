@@ -27,13 +27,73 @@ if ( ! defined( 'ABSPATH' ) ) {
 	 * Apply saved panel widths before first paint. The stylesheet loads in the
 	 * head but the bundle is a footer script, so without this the layout would
 	 * visibly jump from the 20%/30% defaults to the stored sizes on every load.
-	 * Deliberately minimal — clamping, collapse classes and ARIA state are all
-	 * handled by assets/js/components/layout.js on init.
+	 *
+	 * The clamping mirrors resolveWidths() in assets/js/components/layout.js and
+	 * must stay in sync with it: a width saved on a wide monitor and reopened on
+	 * a laptop would otherwise crowd the main panel out of the very first frame,
+	 * which is the flash this script exists to prevent. Limits are read from the
+	 * same custom properties rather than duplicated as literals.
+	 *
+	 * This runs after the stylesheet link, which blocks it, so getComputedStyle
+	 * already sees the tokens from variables.css.
 	 */
-	wp_print_inline_script_tag(
-		'try{var s=localStorage.getItem("wp-rest-playground-layout");if(s){var l=JSON.parse(s),r=document.documentElement,p={sidebar:"--rest-playground-sidebar-w",response:"--rest-playground-response-w"};Object.keys(p).forEach(function(k){var e=l&&l[k];if(!e)return;if(e.collapsed===true){r.style.setProperty(p[k],"0px");return}if(typeof e.width==="number"&&isFinite(e.width)&&e.width>0){r.style.setProperty(p[k],e.width+"px")}})}}catch(e){}',
-		[ 'id' => 'wp-rest-playground-layout-preload' ]
-	);
+	$layout_preload = <<<'JS'
+(function () {
+	try {
+		var stored = localStorage.getItem('wp-rest-playground-layout');
+		if (!stored) return;
+
+		var saved = JSON.parse(stored);
+		if (!saved || typeof saved !== 'object') return;
+
+		var root = document.documentElement;
+		var styles = getComputedStyle(root);
+		var num = function (name, fallback) {
+			var value = parseFloat(styles.getPropertyValue(name));
+			return isFinite(value) ? value : fallback;
+		};
+
+		// `ratio` is the stylesheet default, used to estimate a panel the user
+		// has never resized so the fit check below can account for its width.
+		var panels = [
+			{ key: 'sidebar', prop: '--rest-playground-sidebar-w', min: '--rest-playground-sidebar-min', max: '--rest-playground-sidebar-max', ratio: 0.2 },
+			{ key: 'response', prop: '--rest-playground-response-w', min: '--rest-playground-response-min', max: '--rest-playground-response-max', ratio: 0.3 }
+		];
+
+		var widths = panels.map(function (panel) {
+			var entry = saved[panel.key];
+			if (!entry || typeof entry !== 'object') return null;
+			if (entry.collapsed === true) return 0;
+			if (typeof entry.width !== 'number' || !isFinite(entry.width) || entry.width <= 0) return null;
+			return Math.min(Math.max(entry.width, num(panel.min, 200)), num(panel.max, 640));
+		});
+
+		var used = widths.reduce(function (total, width, i) {
+			return total + (width === null ? window.innerWidth * panels[i].ratio : width);
+		}, 0);
+		var excess = used + num('--rest-playground-main-min', 360) - window.innerWidth;
+
+		if (excess > 0) {
+			var room = widths.map(function (width, i) {
+				return width === null ? 0 : Math.max(0, width - num(panels[i].min, 200));
+			});
+			var headroom = room.reduce(function (total, value) { return total + value; }, 0);
+			if (headroom > 0) {
+				var take = Math.min(excess, headroom);
+				widths = widths.map(function (width, i) {
+					return width === null ? null : width - (room[i] / headroom) * take;
+				});
+			}
+		}
+
+		widths.forEach(function (width, i) {
+			if (width !== null) root.style.setProperty(panels[i].prop, Math.round(width) + 'px');
+		});
+	} catch (e) {}
+})();
+JS;
+
+	wp_print_inline_script_tag( $layout_preload, [ 'id' => 'wp-rest-playground-layout-preload' ] );
 	?>
 </head>
 <body class="rest-playground-body">
@@ -226,7 +286,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		id="collapse-sidebar"
 		aria-controls="rest-playground-sidebar"
 		aria-expanded="true"
-		aria-label="<?php esc_attr_e( 'Collapse endpoints sidebar', 'wp-rest-api-playground' ); ?>"
+		aria-label="<?php esc_attr_e( 'Toggle endpoints sidebar', 'wp-rest-api-playground' ); ?>"
 	>
 		<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 			<path d="M10 3L5 8l5 5"/>
@@ -248,7 +308,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 		id="collapse-response"
 		aria-controls="rest-playground-response"
 		aria-expanded="true"
-		aria-label="<?php esc_attr_e( 'Collapse response panel', 'wp-rest-api-playground' ); ?>"
+		aria-label="<?php esc_attr_e( 'Toggle response panel', 'wp-rest-api-playground' ); ?>"
 	>
 		<svg viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
 			<path d="M10 3L5 8l5 5"/>

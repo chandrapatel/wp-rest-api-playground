@@ -227,7 +227,12 @@ const apply = () => {
 		el.classList.toggle('is-collapsed', collapsed);
 		button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
 
-		resizer.setAttribute('aria-valuemin', String(Math.round(lim[panel.key].min)));
+		// A collapsed panel legitimately sits at 0, which would fall outside the
+		// panel's normal minimum and make the separator's value out of range.
+		resizer.setAttribute(
+			'aria-valuemin',
+			String(collapsed ? 0 : Math.round(lim[panel.key].min)),
+		);
 		resizer.setAttribute('aria-valuemax', String(Math.round(lim[panel.key].max)));
 		resizer.setAttribute('aria-valuenow', String(width === null ? measure(panel) : width));
 	});
@@ -259,6 +264,9 @@ const endDrag = () => {
 	if (frame) {
 		cancelAnimationFrame(frame);
 		frame = 0;
+		// Releasing between a pointermove and its queued frame would otherwise
+		// discard that last delta and persist a slightly stale width.
+		setWidth(drag.panel, drag.next, drag.lim);
 	}
 	els[drag.panel.key].resizer.classList.remove('is-dragging');
 	document.body.classList.remove('is-resizing');
