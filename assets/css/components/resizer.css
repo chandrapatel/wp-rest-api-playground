@@ -124,6 +124,16 @@
 	color: var(--rest-playground-white);
 }
 
+/* Touch and pen have no hover to reveal the toggle with, which would leave
+   collapsing unreachable on tablets wide enough to keep the handles. */
+@media (hover: none) {
+
+	.rest-playground__collapse-btn {
+		opacity: 1;
+		pointer-events: auto;
+	}
+}
+
 /* A zero-width panel would still paint its 1px divider. */
 .rest-playground__sidebar.is-collapsed {
 	border-right-width: 0;

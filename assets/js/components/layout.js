@@ -234,7 +234,20 @@ const resolveWidths = (lim) => {
 };
 
 const apply = () => {
-	if (isMobile()) return;
+	// The stacked layout ignores the width properties, but the desktop-only
+	// state must be actively torn down rather than just skipped: a panel
+	// collapsed above the breakpoint returns to full width down here, and would
+	// stay inert — fully visible and completely unusable. Saved state stays in
+	// `entries`, so crossing back above the breakpoint restores it.
+	if (isMobile()) {
+		PANELS.forEach((panel) => {
+			const { resizer, panel: el } = els[panel.key];
+			el.removeAttribute('inert');
+			el.classList.remove('is-collapsed');
+			resizer.tabIndex = -1;
+		});
+		return;
+	}
 
 	const lim = limits();
 	const widths = resolveWidths(lim);
@@ -262,6 +275,11 @@ const apply = () => {
 		el.toggleAttribute('inert', collapsed);
 
 		button.setAttribute('aria-expanded', collapsed ? 'false' : 'true');
+
+		// Focusable only once it is operable and its range is populated below —
+		// a role="separator" without aria-valuenow is an invalid range widget,
+		// so the markup ships without tabindex and JS grants it here.
+		resizer.tabIndex = 0;
 
 		// A collapsed panel legitimately sits at 0, which would fall outside the
 		// panel's normal minimum and make the separator's value out of range.

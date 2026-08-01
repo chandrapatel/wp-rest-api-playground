@@ -278,7 +278,6 @@ JS;
 		aria-orientation="vertical"
 		aria-controls="rest-playground-sidebar"
 		aria-label="<?php esc_attr_e( 'Resize endpoints sidebar', 'wp-rest-api-playground' ); ?>"
-		tabindex="0"
 	></div>
 	<button
 		type="button"
@@ -300,7 +299,6 @@ JS;
 		aria-orientation="vertical"
 		aria-controls="rest-playground-response"
 		aria-label="<?php esc_attr_e( 'Resize response panel', 'wp-rest-api-playground' ); ?>"
-		tabindex="0"
 	></div>
 	<button
 		type="button"
