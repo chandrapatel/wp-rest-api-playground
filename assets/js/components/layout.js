@@ -16,9 +16,30 @@ const KEY_STEP = 16;
 const KEY_STEP_FINE = 1;
 
 /**
+ * @typedef {object} PanelConfig
+ * @property {string} key       Storage key, and lookup key into `els`.
+ * @property {string} prop      Custom property carrying this panel's width.
+ * @property {string} minVar    Custom property holding its minimum width.
+ * @property {string} maxVar    Custom property holding its maximum width.
+ * @property {string} panelId   Element id of the panel itself.
+ * @property {string} resizerId Element id of its separator.
+ * @property {string} buttonId  Element id of its collapse toggle.
+ * @property {number} direction Sign turning rightward pointer travel into width.
+ */
+
+/**
+ * Resolved pixel limits — one {min, max} pair per panel key, plus the floor the
+ * main panel is guaranteed.
+ *
+ * @typedef {Record<string, {min: number, max: number}> & {mainMin: number}} Limits
+ */
+
+/**
  * `direction` is the sign that turns a rightward pointer movement into a width
  * change: the sidebar grows as the divider moves right, the response panel
  * shrinks.
+ *
+ * @type {PanelConfig[]}
  */
 const PANELS = [
 	{
@@ -51,7 +72,12 @@ let entries = {};
 /** @type {Record<string, {panel: HTMLElement, resizer: HTMLElement, button: HTMLElement}>} */
 const els = {};
 
-/** @type {{panel: object, startX: number, startWidth: number, next: number}|null} */
+/**
+ * Live drag gesture. `lim` is resolved once at pointerdown rather than per
+ * move, and is read again by flush() and endDrag().
+ *
+ * @type {{panel: PanelConfig, startX: number, startWidth: number, next: number, lim: Limits}|null}
+ */
 let drag = null;
 let frame = 0;
 let resizeFrame = 0;
@@ -123,7 +149,7 @@ const clamp = (value, min, max) => Math.min(Math.max(value, min), max);
  * Resolve the resize limits from the CSS custom properties so the numbers stay
  * defined in one place (variables.css).
  *
- * @returns {Record<string, {min: number, max: number}> & {mainMin: number}}
+ * @returns {Limits}
  */
 const limits = () => {
 	const styles = window.getComputedStyle(root);
@@ -149,7 +175,7 @@ const measure = (panel) => Math.round(els[panel.key].panel.getBoundingClientRect
  * Current width in pixels — an explicit stored value, 0 when collapsed, or
  * whatever the CSS percentage default currently resolves to.
  *
- * @param {object} panel - Panel config from PANELS.
+ * @param {PanelConfig} panel - Panel config from PANELS.
  * @returns {number}
  */
 const currentWidth = (panel) => {
@@ -165,7 +191,7 @@ const currentWidth = (panel) => {
  * above the minimum, whenever the viewport can no longer host them plus a
  * usable main panel.
  *
- * @param {object} lim - Result of limits().
+ * @param {Limits} lim - Result of limits().
  * @returns {Record<string, number|null>}
  */
 const resolveWidths = (lim) => {
@@ -242,9 +268,9 @@ const apply = () => {
  * Write a dragged/nudged width, clamped to the panel's own limits so the value
  * never accumulates past the edge and feels sticky on the way back.
  *
- * @param {object} panel - Panel config from PANELS.
+ * @param {PanelConfig} panel - Panel config from PANELS.
  * @param {number} width - Desired width in pixels.
- * @param {object} lim   - Result of limits().
+ * @param {Limits} lim   - Result of limits().
  */
 const setWidth = (panel, width, lim) => {
 	entries[panel.key] = {
