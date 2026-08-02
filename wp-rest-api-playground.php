@@ -2,7 +2,7 @@
 /**
  * Plugin Name:       WP REST API Playground
  * Description:       Test and explore the WordPress REST API directly from the frontend at /rest-api-playground/.
- * Version:           1.1.0
+ * Version:           1.2.0
  * Requires at least: 6.0
  * Requires PHP:      8.0
  * Author:            Chandra Patel
@@ -21,7 +21,7 @@ if ( ! defined( 'ABSPATH' ) ) {
 	exit;
 }
 
-define( 'WP_REST_PLAYGROUND_VERSION', '1.1.0' );
+define( 'WP_REST_PLAYGROUND_VERSION', '1.2.0' );
 define( 'WP_REST_PLAYGROUND_PLUGIN_FILE', __FILE__ );
 define( 'WP_REST_PLAYGROUND_PLUGIN_DIR', plugin_dir_path( __FILE__ ) );
 define( 'WP_REST_PLAYGROUND_PLUGIN_URL', plugin_dir_url( __FILE__ ) );
