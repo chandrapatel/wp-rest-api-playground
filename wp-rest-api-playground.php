@@ -1,12 +1,14 @@
 <?php
 /**
- * Plugin Name: WP REST API Playground
- * Description: Test and explore the WordPress REST API directly from the frontend at /rest-api-playground/.
- * Version:     1.1.0
- * Author:      Chandra Patel
- * Plugin URI:  https://github.com/chandrapatel/wp-rest-api-playground
- * License:     GPL-2.0-or-later
- * Text Domain: wp-rest-api-playground
+ * Plugin Name:       WP REST API Playground
+ * Description:       Test and explore the WordPress REST API directly from the frontend at /rest-api-playground/.
+ * Version:           1.1.0
+ * Requires at least: 6.0
+ * Requires PHP:      8.0
+ * Author:            Chandra Patel
+ * Plugin URI:        https://github.com/chandrapatel/wp-rest-api-playground
+ * License:           GPL-2.0-or-later
+ * Text Domain:       wp-rest-api-playground
  *
  * @package WP_REST_Playground
  */
