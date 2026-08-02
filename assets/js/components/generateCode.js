@@ -11,6 +11,17 @@
 const escapeForStr = (str) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 
 /**
+ * Escape a value for a POSIX single-quoted shell string. Backslash-escaping
+ * does not work inside single quotes — the only way to embed a quote is to
+ * close the string, emit an escaped quote, and reopen it (the `'\''` idiom).
+ * Anything else, including backslashes, is literal inside single quotes.
+ *
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+const escapeForShell = (str) => str.replace(/'/g, "'\\''");
+
+/**
  * Parse a URL into its base path and a plain object of query params.
  *
  * @param {string} url - The URL to parse.
@@ -158,12 +169,12 @@ export const generateCurlCode = (url, options) => {
 		parts.push(`  --request ${method}`);
 	}
 
-	parts.push(`  --url '${escapeForStr(url)}'`);
+	parts.push(`  --url '${escapeForShell(url)}'`);
 
 	Object.entries(headers).forEach(([key, val]) => {
 		if (key === 'X-WP-Nonce') return;
-		if (isGet && (key === 'Content-Type' || key === 'Authorization')) return;
-		parts.push(`  --header '${escapeForStr(key)}: ${escapeForStr(val)}'`);
+		if (isGet && key === 'Content-Type') return;
+		parts.push(`  --header '${escapeForShell(key)}: ${escapeForShell(val)}'`);
 	});
 
 	if (!isGet && !('Authorization' in headers)) {
@@ -173,9 +184,9 @@ export const generateCurlCode = (url, options) => {
 	if (body) {
 		try {
 			const pretty = JSON.stringify(JSON.parse(body));
-			parts.push(`  --data '${escapeForStr(pretty)}'`);
+			parts.push(`  --data '${escapeForShell(pretty)}'`);
 		} catch {
-			parts.push(`  --data '${escapeForStr(body)}'`);
+			parts.push(`  --data '${escapeForShell(body)}'`);
 		}
 	}
 

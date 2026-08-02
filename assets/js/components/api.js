@@ -3,7 +3,7 @@
  */
 
 import { state } from './state';
-import { extractPathParams } from './utils';
+import { substitutePathParams } from './utils';
 import {
 	showResponseLoading,
 	renderResponse,
@@ -19,25 +19,16 @@ import {
 export const buildRequest = () => {
 	const endpoint = state.selectedEndpoint;
 	const method = state.selectedMethod;
-	const pathParams = extractPathParams(endpoint.route);
 
-	// Build URL: substitute path params.
-	let routePath = endpoint.route;
-	pathParams.forEach((param) => {
+	// Build URL: substitute path params with their field values; params left
+	// blank drop out of the path entirely, matching the old strip behaviour.
+	const routePath = substitutePathParams(endpoint.route, (param) => {
 		const input = /** @type {HTMLInputElement|null} */ (
 			document.getElementById(`field-path-${param}`)
 		);
 		const val = input?.value?.trim() ?? '';
-		if (val) {
-			// Replace the named capture group with the actual value.
-			routePath = routePath.replace(
-				new RegExp(`\\(\\?P<${param}>[^)]+\\)`),
-				encodeURIComponent(val),
-			);
-		}
+		return val ? encodeURIComponent(val) : '';
 	});
-	// Strip any leftover unresolved regex patterns.
-	routePath = routePath.replace(/\(\?P<[^>]+>[^)]+\)/g, '');
 
 	const baseUrl = (window.wpRestPlayground?.restUrl ?? '').replace(/\/$/, '');
 	let url = baseUrl + routePath;
@@ -142,10 +133,13 @@ export const onSendRequest = async () => {
 	if (!state.selectedEndpoint || !state.selectedMethod) return;
 
 	const sendBtn = document.getElementById('send-request');
-	if (sendBtn) {
-		sendBtn.disabled = true;
-		sendBtn.textContent = 'Sending…';
-	}
+	// Only the label span changes — writing textContent on the button itself
+	// would wipe its icon. The original text is restored, not re-hardcoded, so
+	// a translated label survives the round trip.
+	const sendLabel = document.getElementById('send-request-label');
+	const sendLabelText = sendLabel?.textContent ?? '';
+	if (sendBtn) sendBtn.disabled = true;
+	if (sendLabel) sendLabel.textContent = 'Sending…';
 
 	showResponseLoading();
 
@@ -194,9 +188,7 @@ export const onSendRequest = async () => {
 				: 'Request failed. Please check your connection and try again.';
 		renderResponseError(message, duration);
 	} finally {
-		if (sendBtn) {
-			sendBtn.disabled = false;
-			sendBtn.textContent = 'Send Request';
-		}
+		if (sendBtn) sendBtn.disabled = false;
+		if (sendLabel) sendLabel.textContent = sendLabelText;
 	}
 };
