@@ -61,6 +61,10 @@ class Page {
 			);
 		}
 
+		// The page embeds a live REST nonce, so it must never be served from an
+		// intermediary or full-page cache.
+		nocache_headers();
+
 		// Prevent the playground from being embedded in frames (clickjacking protection)
 		// and restrict resource loading to same origin only.
 		header( "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; font-src 'self'; object-src 'none'; base-uri 'self'; frame-ancestors 'none';" );

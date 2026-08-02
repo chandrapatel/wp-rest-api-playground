@@ -3,13 +3,30 @@
  */
 
 import { state } from './state';
-import { extractPathParams } from './utils';
+import { encodePathParam, hasTraversalSegment, substitutePathParams } from './utils';
 import {
 	showResponseLoading,
 	renderResponse,
 	renderResponseError,
 	renderCodeOnly,
 } from './render/response';
+
+/**
+ * Raised when the form cannot be turned into a request. Separates a problem the
+ * user can see and fix in the form from a transport failure, whose cause is not
+ * visible to us and so only ever gets a generic message.
+ */
+export class RequestBuildError extends Error {
+	/**
+	 * Build the error with the text to surface in the response panel.
+	 *
+	 * @param {string} message - Text shown in the response panel.
+	 */
+	constructor(message) {
+		super(message);
+		this.name = 'RequestBuildError';
+	}
+}
 
 /**
  * Assemble the fetch URL and init options from the current form state.
@@ -19,25 +36,21 @@ import {
 export const buildRequest = () => {
 	const endpoint = state.selectedEndpoint;
 	const method = state.selectedMethod;
-	const pathParams = extractPathParams(endpoint.route);
 
-	// Build URL: substitute path params.
-	let routePath = endpoint.route;
-	pathParams.forEach((param) => {
+	// Build URL: substitute path params with their field values; params left
+	// blank drop out of the path entirely, matching the old strip behaviour.
+	const routePath = substitutePathParams(endpoint.route, (param) => {
 		const input = /** @type {HTMLInputElement|null} */ (
 			document.getElementById(`field-path-${param}`)
 		);
 		const val = input?.value?.trim() ?? '';
-		if (val) {
-			// Replace the named capture group with the actual value.
-			routePath = routePath.replace(
-				new RegExp(`\\(\\?P<${param}>[^)]+\\)`),
-				encodeURIComponent(val),
+		if (hasTraversalSegment(val)) {
+			throw new RequestBuildError(
+				`The "${param}" path parameter cannot contain "." or ".." path segments — they would send the request to a different endpoint than the one shown.`,
 			);
 		}
+		return val ? encodePathParam(val) : '';
 	});
-	// Strip any leftover unresolved regex patterns.
-	routePath = routePath.replace(/\(\?P<[^>]+>[^)]+\)/g, '');
 
 	const baseUrl = (window.wpRestPlayground?.restUrl ?? '').replace(/\/$/, '');
 	let url = baseUrl + routePath;
@@ -85,7 +98,9 @@ export const buildRequest = () => {
 			try {
 				JSON.parse(raw); // validate before sending
 			} catch {
-				throw new Error('Invalid JSON in request body — please check your syntax.');
+				throw new RequestBuildError(
+					'Invalid JSON in request body — please check your syntax.',
+				);
 			}
 			body = raw;
 		} else {
@@ -142,10 +157,13 @@ export const onSendRequest = async () => {
 	if (!state.selectedEndpoint || !state.selectedMethod) return;
 
 	const sendBtn = document.getElementById('send-request');
-	if (sendBtn) {
-		sendBtn.disabled = true;
-		sendBtn.textContent = 'Sending…';
-	}
+	// Only the label span changes — writing textContent on the button itself
+	// would wipe its icon. The original text is restored, not re-hardcoded, so
+	// a translated label survives the round trip.
+	const sendLabel = document.getElementById('send-request-label');
+	const sendLabelText = sendLabel?.textContent ?? '';
+	if (sendBtn) sendBtn.disabled = true;
+	if (sendLabel) sendLabel.textContent = 'Sending…';
 
 	showResponseLoading();
 
@@ -189,14 +207,12 @@ export const onSendRequest = async () => {
 		// eslint-disable-next-line no-console
 		console.error('[REST Playground] Request failed:', err);
 		const message =
-			err instanceof Error && err.message.includes('Invalid JSON')
+			err instanceof RequestBuildError
 				? err.message
 				: 'Request failed. Please check your connection and try again.';
 		renderResponseError(message, duration);
 	} finally {
-		if (sendBtn) {
-			sendBtn.disabled = false;
-			sendBtn.textContent = 'Send Request';
-		}
+		if (sendBtn) sendBtn.disabled = false;
+		if (sendLabel) sendLabel.textContent = sendLabelText;
 	}
 };

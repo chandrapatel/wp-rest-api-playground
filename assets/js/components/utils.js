@@ -17,13 +17,96 @@ export const escapeHtml = (value) =>
 		.replace(/'/g, '&#039;');
 
 /**
+ * Locate every `(?P<name>pattern)` span in a route.
+ *
+ * A naive `[^)]+` match stops at the first `)`, but core route patterns nest
+ * groups — e.g. /wp/v2/plugins/(?P<plugin>[^.\/]+(?:\/[^.\/]+)?) — so the close
+ * paren has to be found by depth counting, skipping regex-escaped characters.
+ *
+ * @param {string} route - The raw WP REST API route pattern.
+ * @returns {Array<{name: string, start: number, end: number}>} Spans in order;
+ * `start`/`end` delimit the whole `(?P<…>…)` group, `end` exclusive.
+ */
+const findParamSpans = (route) => {
+	const spans = [];
+	let i = 0;
+	while (i < route.length) {
+		const start = route.indexOf('(?P<', i);
+		if (start === -1) break;
+		const nameEnd = route.indexOf('>', start + 4);
+		if (nameEnd === -1) break;
+		let depth = 1;
+		let j = nameEnd + 1;
+		while (j < route.length && depth > 0) {
+			if (route[j] === '\\') j += 1;
+			else if (route[j] === '(') depth += 1;
+			else if (route[j] === ')') depth -= 1;
+			j += 1;
+		}
+		spans.push({ name: route.slice(start + 4, nameEnd), start, end: j });
+		i = j;
+	}
+	return spans;
+};
+
+/**
+ * Replace each path param group in a route with whatever `resolve` returns
+ * for its name. The parts between groups pass through untouched.
+ *
+ * @param {string} route - The raw WP REST API route pattern.
+ * @param {(name: string) => string} resolve - Replacement for a param name.
+ * @returns {string}
+ */
+export const substitutePathParams = (route, resolve) => {
+	let out = '';
+	let last = 0;
+	findParamSpans(route).forEach(({ name, start, end }) => {
+		out += route.slice(last, start) + resolve(name);
+		last = end;
+	});
+	return out + route.slice(last);
+};
+
+/**
+ * Encode a path parameter value for interpolation into the URL path.
+ *
+ * `/` is deliberately left literal. Several core routes accept a slash inside a
+ * single param — /wp/v2/plugins/(?P<plugin>[^.\/]+(?:\/[^.\/]+)?) is matched by
+ * `jetpack/jetpack`, and template ids look like `twentytwentyfour//home`.
+ * WordPress matches REST routes against the still-encoded request path, so a
+ * `%2F` never turns back into a separator: the route matches as one segment and
+ * the controller then looks up a resource whose name literally contains `%2F`.
+ *
+ * @param {string} value - Raw value from the path parameter field.
+ * @returns {string}
+ */
+export const encodePathParam = (value) => encodeURIComponent(value).replace(/%2F/g, '/');
+
+/**
+ * Whether a path parameter value contains a segment that would move the request
+ * up out of its endpoint.
+ *
+ * The browser resolves `.` and `..` segments before the request leaves, so such
+ * a value silently retargets the call at a route other than the one shown in the
+ * URL bar — the response would then belong to an endpoint the user never picked.
+ * Checked on the raw value: encodePathParam() leaves both `.` and `/` literal,
+ * and anything the user percent-encodes by hand has its `%` escaped, so it can
+ * no longer act as a separator.
+ *
+ * @param {string} value - Raw value from the path parameter field.
+ * @returns {boolean}
+ */
+export const hasTraversalSegment = (value) =>
+	value.split('/').some((segment) => segment === '.' || segment === '..');
+
+/**
  * Replace regex-style path param patterns with {name} for display.
  * e.g. /wp/v2/posts/(?P<id>[\d]+) → /wp/v2/posts/{id}
  *
  * @param {string} route - The raw WP REST API route pattern.
  * @returns {string}
  */
-export const prettifyRoute = (route) => route.replace(/\(\?P<([^>]+)>[^)]+\)/g, '{$1}');
+export const prettifyRoute = (route) => substitutePathParams(route, (name) => `{${name}}`);
 
 /**
  * Extract parameter names from a route regex.
@@ -32,16 +115,7 @@ export const prettifyRoute = (route) => route.replace(/\(\?P<([^>]+)>[^)]+\)/g, 
  * @param {string} route - The raw WP REST API route pattern.
  * @returns {string[]}
  */
-export const extractPathParams = (route) => {
-	const params = [];
-	const re = /\(\?P<([^>]+)>[^)]+\)/g;
-	let m = re.exec(route);
-	while (m !== null) {
-		params.push(m[1]);
-		m = re.exec(route);
-	}
-	return params;
-};
+export const extractPathParams = (route) => findParamSpans(route).map(({ name }) => name);
 
 /**
  * Simple JSON syntax highlighter.

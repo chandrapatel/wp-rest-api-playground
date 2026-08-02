@@ -19,7 +19,11 @@ export const renderField = (name, arg, context) => {
 	const defaultVal = arg.default ?? '';
 	const enumVals = Array.isArray(arg.enum) ? arg.enum : null;
 
-	const id = `field-${context}-${name}`;
+	// Arg names come from route registrations by arbitrary plugins, so they are
+	// escaped everywhere they land in markup, same as descriptions and defaults.
+	const safeName = escapeHtml(name);
+	const safeType = escapeHtml(String(type));
+	const id = escapeHtml(`field-${context}-${name}`);
 
 	let inputHtml;
 
@@ -31,7 +35,7 @@ export const renderField = (name, arg, context) => {
 			)
 			.join('');
 		inputHtml = `
-			<select class="rest-playground__field-select" id="${id}" name="${name}" data-context="${context}">
+			<select class="rest-playground__field-select" id="${id}" name="${safeName}" data-context="${context}">
 				<option value="">— Select —</option>
 				${options}
 			</select>
@@ -44,13 +48,13 @@ export const renderField = (name, arg, context) => {
 						class="rest-playground__checkbox"
 						type="checkbox"
 						id="${id}"
-						name="${name}"
+						name="${safeName}"
 						data-context="${context}"
-						data-type="${type}"
+						data-type="${safeType}"
 						${defaultVal === true ? 'checked' : ''}
 					>
 					<label class="rest-playground__field-name" for="${id}">
-						${escapeHtml(name)}
+						${safeName}
 						${required ? '<span class="rest-playground__field-required">*</span>' : ''}
 						<span class="rest-playground__field-type">boolean</span>
 					</label>
@@ -66,9 +70,9 @@ export const renderField = (name, arg, context) => {
 				class="rest-playground__field-input"
 				type="number"
 				id="${id}"
-				name="${name}"
+				name="${safeName}"
 				data-context="${context}"
-				data-type="${type}"
+				data-type="${safeType}"
 				placeholder="${escapeHtml(String(defaultVal))}"
 				${min}${max}
 			>
@@ -78,9 +82,9 @@ export const renderField = (name, arg, context) => {
 			<textarea
 				class="rest-playground__field-input rest-playground__field-textarea"
 				id="${id}"
-				name="${name}"
+				name="${safeName}"
 				data-context="${context}"
-				data-type="${type}"
+				data-type="${safeType}"
 				rows="3"
 				spellcheck="false"
 				placeholder="${type === 'array' ? '[]' : '{}'}"
@@ -92,9 +96,9 @@ export const renderField = (name, arg, context) => {
 				class="rest-playground__field-input"
 				type="text"
 				id="${id}"
-				name="${name}"
+				name="${safeName}"
 				data-context="${context}"
-				data-type="${type}"
+				data-type="${safeType}"
 				placeholder="${escapeHtml(String(defaultVal))}"
 			>
 		`;
@@ -104,10 +108,10 @@ export const renderField = (name, arg, context) => {
 		<div class="rest-playground__field">
 			<div class="rest-playground__field-label-row">
 				<label class="rest-playground__field-name" for="${id}">
-					${escapeHtml(name)}
+					${safeName}
 					${required ? '<span class="rest-playground__field-required">*</span>' : ''}
 				</label>
-				<span class="rest-playground__field-type">${escapeHtml(String(type))}</span>
+				<span class="rest-playground__field-type">${safeType}</span>
 			</div>
 			${inputHtml}
 			${description ? `<p class="rest-playground__field-desc">${escapeHtml(description)}</p>` : ''}
