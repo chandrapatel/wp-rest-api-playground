@@ -68,6 +68,21 @@ export const substitutePathParams = (route, resolve) => {
 };
 
 /**
+ * Encode a path parameter value for interpolation into the URL path.
+ *
+ * `/` is deliberately left literal. Several core routes accept a slash inside a
+ * single param — /wp/v2/plugins/(?P<plugin>[^.\/]+(?:\/[^.\/]+)?) is matched by
+ * `jetpack/jetpack`, and template ids look like `twentytwentyfour//home`.
+ * WordPress matches REST routes against the still-encoded request path, so a
+ * `%2F` never turns back into a separator: the route matches as one segment and
+ * the controller then looks up a resource whose name literally contains `%2F`.
+ *
+ * @param {string} value - Raw value from the path parameter field.
+ * @returns {string}
+ */
+export const encodePathParam = (value) => encodeURIComponent(value).replace(/%2F/g, '/');
+
+/**
  * Replace regex-style path param patterns with {name} for display.
  * e.g. /wp/v2/posts/(?P<id>[\d]+) → /wp/v2/posts/{id}
  *

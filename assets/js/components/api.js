@@ -3,7 +3,7 @@
  */
 
 import { state } from './state';
-import { substitutePathParams } from './utils';
+import { encodePathParam, substitutePathParams } from './utils';
 import {
 	showResponseLoading,
 	renderResponse,
@@ -27,7 +27,7 @@ export const buildRequest = () => {
 			document.getElementById(`field-path-${param}`)
 		);
 		const val = input?.value?.trim() ?? '';
-		return val ? encodeURIComponent(val) : '';
+		return val ? encodePathParam(val) : '';
 	});
 
 	const baseUrl = (window.wpRestPlayground?.restUrl ?? '').replace(/\/$/, '');
