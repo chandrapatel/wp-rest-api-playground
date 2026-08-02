@@ -83,6 +83,23 @@ export const substitutePathParams = (route, resolve) => {
 export const encodePathParam = (value) => encodeURIComponent(value).replace(/%2F/g, '/');
 
 /**
+ * Whether a path parameter value contains a segment that would move the request
+ * up out of its endpoint.
+ *
+ * The browser resolves `.` and `..` segments before the request leaves, so such
+ * a value silently retargets the call at a route other than the one shown in the
+ * URL bar — the response would then belong to an endpoint the user never picked.
+ * Checked on the raw value: encodePathParam() leaves both `.` and `/` literal,
+ * and anything the user percent-encodes by hand has its `%` escaped, so it can
+ * no longer act as a separator.
+ *
+ * @param {string} value - Raw value from the path parameter field.
+ * @returns {boolean}
+ */
+export const hasTraversalSegment = (value) =>
+	value.split('/').some((segment) => segment === '.' || segment === '..');
+
+/**
  * Replace regex-style path param patterns with {name} for display.
  * e.g. /wp/v2/posts/(?P<id>[\d]+) → /wp/v2/posts/{id}
  *

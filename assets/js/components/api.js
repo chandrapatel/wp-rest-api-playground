@@ -3,13 +3,30 @@
  */
 
 import { state } from './state';
-import { encodePathParam, substitutePathParams } from './utils';
+import { encodePathParam, hasTraversalSegment, substitutePathParams } from './utils';
 import {
 	showResponseLoading,
 	renderResponse,
 	renderResponseError,
 	renderCodeOnly,
 } from './render/response';
+
+/**
+ * Raised when the form cannot be turned into a request. Separates a problem the
+ * user can see and fix in the form from a transport failure, whose cause is not
+ * visible to us and so only ever gets a generic message.
+ */
+export class RequestBuildError extends Error {
+	/**
+	 * Build the error with the text to surface in the response panel.
+	 *
+	 * @param {string} message - Text shown in the response panel.
+	 */
+	constructor(message) {
+		super(message);
+		this.name = 'RequestBuildError';
+	}
+}
 
 /**
  * Assemble the fetch URL and init options from the current form state.
@@ -27,6 +44,11 @@ export const buildRequest = () => {
 			document.getElementById(`field-path-${param}`)
 		);
 		const val = input?.value?.trim() ?? '';
+		if (hasTraversalSegment(val)) {
+			throw new RequestBuildError(
+				`The "${param}" path parameter cannot contain "." or ".." path segments — they would send the request to a different endpoint than the one shown.`,
+			);
+		}
 		return val ? encodePathParam(val) : '';
 	});
 
@@ -76,7 +98,9 @@ export const buildRequest = () => {
 			try {
 				JSON.parse(raw); // validate before sending
 			} catch {
-				throw new Error('Invalid JSON in request body — please check your syntax.');
+				throw new RequestBuildError(
+					'Invalid JSON in request body — please check your syntax.',
+				);
 			}
 			body = raw;
 		} else {
@@ -183,7 +207,7 @@ export const onSendRequest = async () => {
 		// eslint-disable-next-line no-console
 		console.error('[REST Playground] Request failed:', err);
 		const message =
-			err instanceof Error && err.message.includes('Invalid JSON')
+			err instanceof RequestBuildError
 				? err.message
 				: 'Request failed. Please check your connection and try again.';
 		renderResponseError(message, duration);
