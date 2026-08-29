@@ -188,6 +188,12 @@ export const loadAuth = () => {
 	}
 
 	state.auth = { activeProfileId, profiles, sendWpCookie };
+
+	// Write straight back. Hydration is not always a no-op: migrating the pre-v2
+	// key removes it, and the fallback profile above may have just been created.
+	// Without this the migrated credential exists only in memory — a reload
+	// before the user happens to edit something would lose it from both keys.
+	persistAuth();
 };
 
 /**

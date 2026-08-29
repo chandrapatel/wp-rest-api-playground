@@ -55,9 +55,17 @@ export const redactSecrets = (url, options, meta = {}) => {
 
 	const headers = { ...options.headers };
 	secretHeaders.forEach((name) => {
-		if (name in headers) headers[name] = placeholderFor(headers[name]);
+		// Matched case-insensitively: the scheme reports the spelling it wrote
+		// ("Authorization"), but a Headers-tab row may have replaced it under a
+		// different case ("authorization"). An exact lookup misses that and the
+		// live credential is printed into the snippet with masking switched on.
+		const lower = name.toLowerCase();
+		const key = Object.keys(headers).find((existing) => existing.toLowerCase() === lower);
+		if (key) headers[key] = placeholderFor(headers[key]);
 	});
 
+	// Query parameter names, unlike header names, are case-sensitive — so these
+	// stay an exact match.
 	let redactedUrl = url;
 	if (secretQuery.length) {
 		const qIdx = url.indexOf('?');
@@ -124,7 +132,9 @@ const toPhpLiteral = (value, indent = 1) => {
  * Generate a JavaScript fetch() code example.
  * - GET    : query params shown as URLSearchParams variable.
  * - POST/PUT/PATCH: body shown as a separate `params` object variable.
- * X-WP-Nonce is omitted — it is browser-only and not useful outside the playground context.
+ * X-WP-Nonce is kept only when the request authenticates by cookie, where it is
+ * mandatory; with a credential in the Authorization header it is dropped, since
+ * it is browser-only and irrelevant outside the playground.
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string, credentials?: string }} options - Fetch options.
@@ -137,7 +147,20 @@ export const generateJsCode = (url, options) => {
 	const { base, params: queryParams } = isGet ? parseUrl(url) : { base: url, params: {} };
 	const hasQueryParams = isGet && Object.keys(queryParams).length > 0;
 
+	// The nonce is only meaningful next to the login cookie, and is required
+	// there: rest_cookie_check_errors() calls wp_set_current_user( 0 ) when a
+	// cookie-authenticated REST request arrives without one, so a snippet that
+	// kept the cookie but dropped the nonce would quietly run as nobody.
+	const usesCookie = credentials === 'same-origin' || credentials === 'include';
+	const isNonce = (key) => key.toLowerCase() === 'x-wp-nonce';
+	const sendsNonce = usesCookie && Object.keys(headers).some(isNonce);
+
 	let code = '';
+
+	if (sendsNonce) {
+		code += `// X-WP-Nonce is tied to your current login and expires with the session.\n`;
+		code += `// On a page that enqueues the wp-api script, use wpApiSettings.nonce instead.\n\n`;
+	}
 
 	// GET: URLSearchParams variable.
 	if (hasQueryParams) {
@@ -172,7 +195,7 @@ export const generateJsCode = (url, options) => {
 	code += `        headers: {\n`;
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
+		if (isNonce(key) && !usesCookie) return;
 		code += `            '${escapeForStr(key)}': '${escapeForStr(val)}',\n`;
 	});
 
