@@ -5,6 +5,7 @@
 import { state } from '../state';
 import { escapeHtml, extractPathParams, prettifyRoute } from '../utils';
 import { renderField } from './fields';
+import { refreshTabBadges, selectRequestTab } from './requestTabs';
 
 /**
  * Populate the path/query/body parameter sections for the given endpoint + method.
@@ -76,10 +77,16 @@ export const renderRequestForm = (endpoint, method) => {
 					});
 				});
 			} else {
-				// No schema args — just a raw JSON textarea.
+				// No schema args — just a raw JSON textarea. The #body-raw-pane
+				// wrapper is required, not cosmetic: buildRequest() decides it is
+				// in raw mode by finding that element unhidden. Without it the
+				// textarea is ignored and the typed JSON is silently replaced by
+				// an empty object.
 				bodyFields.innerHTML = `
-					<p class="rest-playground__field-desc" style="margin-bottom:8px;">No schema available for this endpoint's body. Enter raw JSON below.</p>
-					<textarea id="raw-json-body" class="rest-playground__json-input" placeholder="{}" rows="8" spellcheck="false"></textarea>
+					<div id="body-raw-pane" class="rest-playground__body-pane">
+						<p class="rest-playground__field-desc" style="margin-bottom:8px;">No schema available for this endpoint's body. Enter raw JSON below.</p>
+						<textarea id="raw-json-body" class="rest-playground__json-input" placeholder="{}" rows="8" spellcheck="false"></textarea>
+					</div>
 				`;
 			}
 		}
@@ -96,6 +103,12 @@ export const renderRequestForm = (endpoint, method) => {
 					: '<p class="rest-playground__no-params">No query parameters defined for this endpoint.</p>';
 		}
 	}
+
+	refreshTabBadges();
+
+	// Re-selecting the current tab lets it fall back when it no longer applies —
+	// switching POST → GET while Body is open would otherwise leave a blank pane.
+	selectRequestTab(state.activeRequestTab);
 };
 
 /**
@@ -109,6 +122,12 @@ export const renderEndpointPanel = (endpoint, method) => {
 	const panel = document.getElementById('rest-playground-endpoint');
 	if (welcome) welcome.hidden = true;
 	if (panel) panel.hidden = false;
+
+	// Restore the chrome the sidebar auth chip hides when it opens the Auth tab
+	// with no endpoint selected.
+	panel?.querySelector('.rest-playground__endpoint-header')?.removeAttribute('hidden');
+	panel?.querySelector('.rest-playground__send-bar')?.removeAttribute('hidden');
+	document.getElementById('tab-btn-params')?.removeAttribute('hidden');
 
 	// URL bar.
 	const baseUrl = (window.wpRestPlayground?.restUrl ?? '').replace(/\/$/, '');

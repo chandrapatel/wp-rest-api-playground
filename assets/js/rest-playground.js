@@ -7,32 +7,84 @@
 import '../css/rest-playground.css';
 
 import { state } from './components/state';
-import {
-	loadAuthFromStorage,
-	updateAuthStatus,
-	saveAuth,
-	clearAuth,
-	setAuthFormVisible,
-} from './components/auth';
+import { loadAuth, authSummary } from './components/auth';
 import { initLayout } from './components/layout';
 import { renderSidebar } from './components/render/sidebar';
 import { onSendRequest, onGetCode } from './components/api';
 import { onSearch } from './components/search';
+import {
+	initRequestTabs,
+	refreshTabBadges,
+	selectRequestTab,
+} from './components/render/requestTabs';
+import { setAuthChangeHandler } from './components/render/authPanel';
+import { setHeadersChangeHandler } from './components/render/headersPanel';
+
+/**
+ * Refresh the sidebar credential chip from the active profile.
+ */
+const updateAuthChip = () => {
+	const statusEl = document.getElementById('auth-status');
+	const chip = document.getElementById('auth-chip');
+	const { label, isActive } = authSummary();
+
+	if (statusEl) statusEl.textContent = label;
+	if (chip) chip.classList.toggle('is-authenticated', isActive);
+};
 
 const init = async () => {
 	// Must not wait on the routes fetch below — the panels are visible immediately.
 	initLayout();
 
-	loadAuthFromStorage();
-	updateAuthStatus();
+	loadAuth();
 
-	// Warn when the site is not served over HTTPS. Application Password credentials
-	// are sent as a base64-encoded Authorization header — base64 is not encryption
-	// and the credentials are fully exposed on unencrypted connections.
+	// Both panels report back here so the chip and the tab badges stay in step
+	// with whatever the user last typed.
+	setAuthChangeHandler(() => {
+		updateAuthChip();
+		refreshTabBadges();
+	});
+	setHeadersChangeHandler(refreshTabBadges);
+
+	initRequestTabs();
+	updateAuthChip();
+
+	// Warn when the site is not served over HTTPS. Credentials ride in an
+	// Authorization header — base64 is not encryption, and a token or API key is
+	// fully exposed on an unencrypted connection.
 	if (!window.wpRestPlayground?.isHttps) {
 		const banner = document.getElementById('https-warning');
 		if (banner) banner.hidden = false;
 	}
+
+	// Wired before the routes request, not after: the chip is the only way into
+	// the credential editor, and the endpoint list is not needed to set one up.
+	// Binding these afterwards left the whole shell dead while the fetch was in
+	// flight, and permanently dead on the early return below.
+	document.getElementById('send-request')?.addEventListener('click', onSendRequest);
+	document.getElementById('get-code')?.addEventListener('click', onGetCode);
+	document.getElementById('endpoint-search')?.addEventListener('input', onSearch);
+
+	document.getElementById('auth-chip')?.addEventListener('click', () => {
+		// Credentials are usually set up before picking an endpoint, but the tab
+		// bar lives inside the endpoint panel. With nothing selected yet, show
+		// that panel with its endpoint-specific chrome hidden so the Auth tab is
+		// still reachable; renderEndpointPanel() restores the chrome later.
+		if (!state.selectedEndpoint) {
+			const welcome = document.getElementById('rest-playground-welcome');
+			const panel = document.getElementById('rest-playground-endpoint');
+			const header = panel?.querySelector('.rest-playground__endpoint-header');
+			const sendBar = panel?.querySelector('.rest-playground__send-bar');
+			if (welcome) welcome.hidden = true;
+			if (panel) panel.hidden = false;
+			if (header) header.hidden = true;
+			if (sendBar) sendBar.hidden = true;
+			document.getElementById('tab-btn-params')?.setAttribute('hidden', '');
+		}
+
+		selectRequestTab('auth');
+		document.getElementById('tab-btn-auth')?.focus();
+	});
 
 	// Fetch routes.
 	const nav = document.getElementById('endpoint-nav');
@@ -76,20 +128,6 @@ const init = async () => {
 			nav.appendChild(p);
 		}
 	}
-
-	// Global event listeners.
-	document.getElementById('send-request')?.addEventListener('click', onSendRequest);
-	document.getElementById('get-code')?.addEventListener('click', onGetCode);
-	document.getElementById('endpoint-search')?.addEventListener('input', onSearch);
-
-	document.getElementById('auth-toggle')?.addEventListener('click', () => {
-		const form = document.getElementById('auth-form');
-		const isHidden = form?.hidden ?? true;
-		setAuthFormVisible(isHidden);
-	});
-
-	document.getElementById('auth-save')?.addEventListener('click', saveAuth);
-	document.getElementById('auth-clear')?.addEventListener('click', clearAuth);
 };
 
 document.addEventListener('DOMContentLoaded', init);

@@ -22,6 +22,134 @@ const escapeForStr = (str) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const escapeForShell = (str) => str.replace(/'/g, "'\\''");
 
 /**
+ * Escape a value for embedding inside a JavaScript template literal, where a
+ * backtick or `${` opens interpolation that single-quote escaping cannot cover.
+ * Every URL reaching this is built from percent-encoded components, so this is
+ * defence in depth for the context rather than a live hole.
+ *
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+const escapeForTemplate = (str) =>
+	str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+/**
+ * Choose the placeholder that stands in for a redacted credential.
+ *
+ * Keeping the scheme word makes the snippet self-documenting — a reader can see
+ * it needs a bearer token rather than a base64 pair — without carrying the
+ * secret itself.
+ *
+ * @param {string} value - The real header value.
+ * @returns {string}
+ */
+const placeholderFor = (value) => {
+	const scheme = /^(\w+)\s+\S/.exec(value)?.[1];
+	if (!scheme) return 'YOUR_API_KEY';
+	if (scheme.toLowerCase() === 'basic') return 'Basic YOUR_BASE64_CREDENTIALS';
+	return `${scheme} YOUR_TOKEN`;
+};
+
+/**
+ * Replace credential values with placeholders before a snippet is generated.
+ *
+ * Snippets exist to be pasted into docs, tickets and chat, so the safe default
+ * is to leave the secret behind. The Code tab exposes a toggle to opt out.
+ *
+ * @param {string} url - The request URL.
+ * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
+ * @returns {{ url: string, options: { method: string, headers: Record<string,string>, body?: string } }}
+ */
+export const redactSecrets = (url, options, meta = {}) => {
+	const secretHeaders = meta.secretHeaders ?? [];
+	const secretQuery = meta.secretQuery ?? [];
+
+	const headers = { ...options.headers };
+	secretHeaders.forEach((name) => {
+		// Matched case-insensitively: the scheme reports the spelling it wrote
+		// ("Authorization"), but a Headers-tab row may have replaced it under a
+		// different case ("authorization"). An exact lookup misses that and the
+		// live credential is printed into the snippet with masking switched on.
+		const lower = name.toLowerCase();
+		const key = Object.keys(headers).find((existing) => existing.toLowerCase() === lower);
+		if (key) headers[key] = placeholderFor(headers[key]);
+	});
+
+	// Query parameter names, unlike header names, are case-sensitive — so these
+	// stay an exact match.
+	let redactedUrl = url;
+	if (secretQuery.length) {
+		const qIdx = url.indexOf('?');
+		if (qIdx !== -1) {
+			const params = new URLSearchParams(url.slice(qIdx + 1));
+			secretQuery.forEach((name) => {
+				if (params.has(name)) params.set(name, 'YOUR_API_KEY');
+			});
+			redactedUrl = `${url.slice(0, qIdx)}?${params.toString()}`;
+		}
+	}
+
+	return { url: redactedUrl, options: { ...options, headers } };
+};
+
+/**
+ * Header-name tests used by the generators.
+ *
+ * Case-insensitive because the Headers tab preserves whatever spelling the user
+ * typed: an exact-case check let a lowercase `x-wp-nonce` override slip into
+ * snippets that state they omit it.
+ *
+ * @param {string} key - Header name.
+ * @returns {boolean}
+ */
+const isNonceHeader = (key) => key.toLowerCase() === 'x-wp-nonce';
+
+/**
+ * Whether a header name is Content-Type, in any spelling.
+ *
+ * @param {string} key - Header name.
+ * @returns {boolean}
+ */
+const isContentTypeHeader = (key) => key.toLowerCase() === 'content-type';
+
+/**
+ * Warn that a snippet cannot reproduce browser cookie authentication.
+ *
+ * curl and wp_remote_* run outside the browser, so neither carries the login
+ * cookie the playground relied on — they would execute anonymously. Presenting
+ * them as equivalents without saying so is the more misleading option, since
+ * the request appears to work in the panel and then behaves differently.
+ *
+ * @param {string|undefined} credentials - The fetch credentials mode used.
+ * @param {string} commentToken - Line-comment prefix for the target language.
+ * @param {Record<string,string>} [headers] - Request headers, checked for a credential.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
+ * @returns {string} Comment block, or an empty string when not applicable.
+ */
+const cookieCaveat = (credentials, commentToken, headers = {}, meta = {}) => {
+	if (credentials !== 'same-origin' && credentials !== 'include') return '';
+
+	// With a credential still in the snippet it remains runnable and the warning
+	// would be simply wrong. This happens whenever "Also send WordPress cookie +
+	// nonce" is ticked alongside a real profile — the cookie is the part that is
+	// lost, not the auth. Checked via meta as well as the Authorization header,
+	// because an API key rides in a header of its own naming or in the query
+	// string, where a name-based check cannot see it.
+	const hasCredential =
+		Object.keys(headers).some((key) => key.toLowerCase() === 'authorization') ||
+		(meta.secretHeaders?.length ?? 0) > 0 ||
+		(meta.secretQuery?.length ?? 0) > 0;
+	if (hasCredential) return '';
+
+	return (
+		`${commentToken} This snippet cannot send your browser's login cookie, so it will not be\n` +
+		`${commentToken} authenticated by your WordPress session.\n` +
+		`${commentToken} Use an Application Password profile for a runnable equivalent.\n\n`
+	);
+};
+
+/**
  * Parse a URL into its base path and a plain object of query params.
  *
  * @param {string} url - The URL to parse.
@@ -72,20 +200,34 @@ const toPhpLiteral = (value, indent = 1) => {
  * Generate a JavaScript fetch() code example.
  * - GET    : query params shown as URLSearchParams variable.
  * - POST/PUT/PATCH: body shown as a separate `params` object variable.
- * X-WP-Nonce is omitted — it is browser-only and not useful outside the playground context.
+ * X-WP-Nonce is kept only when the request authenticates by cookie, where it is
+ * mandatory; with a credential in the Authorization header it is dropped, since
+ * it is browser-only and irrelevant outside the playground.
  *
  * @param {string} url                                                            - The request URL.
- * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ method: string, headers: Record<string,string>, body?: string, credentials?: string }} options - Fetch options.
  * @returns {string}
  */
 export const generateJsCode = (url, options) => {
-	const { method, headers, body } = options;
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 	const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(method);
 	const { base, params: queryParams } = isGet ? parseUrl(url) : { base: url, params: {} };
 	const hasQueryParams = isGet && Object.keys(queryParams).length > 0;
 
+	// The nonce is only meaningful next to the login cookie, and is required
+	// there: rest_cookie_check_errors() calls wp_set_current_user( 0 ) when a
+	// cookie-authenticated REST request arrives without one, so a snippet that
+	// kept the cookie but dropped the nonce would quietly run as nobody.
+	const usesCookie = credentials === 'same-origin' || credentials === 'include';
+	const sendsNonce = usesCookie && Object.keys(headers).some(isNonceHeader);
+
 	let code = '';
+
+	if (sendsNonce) {
+		code += `// X-WP-Nonce is tied to your current login and expires with the session.\n`;
+		code += `// On a page that enqueues the wp-api script, use wpApiSettings.nonce instead.\n\n`;
+	}
 
 	// GET: URLSearchParams variable.
 	if (hasQueryParams) {
@@ -110,7 +252,7 @@ export const generateJsCode = (url, options) => {
 	}
 
 	const fetchUrl = hasQueryParams
-		? `\`${escapeForStr(base)}?\${ params }\``
+		? `\`${escapeForTemplate(base)}?\${ params }\``
 		: `'${escapeForStr(url)}'`;
 
 	code += `const response = await fetch(\n`;
@@ -120,13 +262,9 @@ export const generateJsCode = (url, options) => {
 	code += `        headers: {\n`;
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
+		if (isNonceHeader(key) && !usesCookie) return;
 		code += `            '${escapeForStr(key)}': '${escapeForStr(val)}',\n`;
 	});
-
-	if (!isGet && !('Authorization' in headers)) {
-		code += `            'Authorization': 'Basic YOUR_BASE64_CREDENTIALS',\n`;
-	}
 
 	code += `        },\n`;
 
@@ -137,6 +275,14 @@ export const generateJsCode = (url, options) => {
 		} catch {
 			code += `        body: ${JSON.stringify(body)},\n`;
 		}
+	}
+
+	// Carried through deliberately. Run from a page on the same site, fetch would
+	// otherwise default to sending the login cookie, which WordPress resolves
+	// before the Authorization header — the snippet would quietly run as the
+	// logged-in user instead of as the credential it appears to use.
+	if (credentials) {
+		code += `        credentials: '${escapeForStr(credentials)}',\n`;
 	}
 
 	code += `    }\n`;
@@ -156,10 +302,11 @@ export const generateJsCode = (url, options) => {
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
  * @returns {string}
  */
-export const generateCurlCode = (url, options) => {
-	const { method, headers, body } = options;
+export const generateCurlCode = (url, options, meta = {}) => {
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 
 	/** @type {string[]} */
@@ -172,14 +319,10 @@ export const generateCurlCode = (url, options) => {
 	parts.push(`  --url '${escapeForShell(url)}'`);
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
-		if (isGet && key === 'Content-Type') return;
+		if (isNonceHeader(key)) return;
+		if (isGet && isContentTypeHeader(key)) return;
 		parts.push(`  --header '${escapeForShell(key)}: ${escapeForShell(val)}'`);
 	});
-
-	if (!isGet && !('Authorization' in headers)) {
-		parts.push(`  --header 'Authorization: Basic YOUR_BASE64_CREDENTIALS'`);
-	}
 
 	if (body) {
 		try {
@@ -190,7 +333,7 @@ export const generateCurlCode = (url, options) => {
 		}
 	}
 
-	return parts.join(' \\\n');
+	return cookieCaveat(credentials, '#', headers, meta) + parts.join(' \\\n');
 };
 
 /**
@@ -199,14 +342,17 @@ export const generateCurlCode = (url, options) => {
  * - POST       : wp_remote_post() with $params variable passed through wp_json_encode().
  * - PUT/PATCH  : wp_remote_post() with explicit 'method' and $params variable.
  * - DELETE     : wp_remote_post() with explicit 'method', no body.
- * X-WP-Nonce is omitted — it is browser-only; Application Password handles auth server-side.
+ * X-WP-Nonce is omitted — it is browser-only, and useless here without the
+ * matching cookie, which PHP cannot send either; cookie-mode requests get a
+ * comment saying so rather than a snippet that quietly runs logged out.
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
  * @returns {string}
  */
-export const generatePhpCode = (url, options) => {
-	const { method, headers, body } = options;
+export const generatePhpCode = (url, options, meta = {}) => {
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 	const isPost = method === 'POST';
 	const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(method);
@@ -216,7 +362,7 @@ export const generatePhpCode = (url, options) => {
 	const fnName = isGet ? 'wp_remote_get' : 'wp_remote_post';
 	const baseUrl = isGet ? base : url;
 
-	let code = '';
+	let code = cookieCaveat(credentials, '//', headers, meta);
 
 	// POST/PUT/PATCH: $params variable.
 	if (isBodyMethod && body) {
@@ -240,13 +386,9 @@ export const generatePhpCode = (url, options) => {
 	code += `        'headers' => [\n`;
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
+		if (isNonceHeader(key)) return;
 		code += `            '${escapeForStr(key)}' => '${escapeForStr(val)}',\n`;
 	});
-
-	if (!isGet && !('Authorization' in headers)) {
-		code += `            'Authorization' => 'Basic YOUR_BASE64_CREDENTIALS',\n`;
-	}
 
 	code += `        ],\n`;
 
