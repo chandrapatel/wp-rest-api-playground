@@ -378,7 +378,28 @@ textarea.rest-playground__secret-input[data-masked="true"] {
 		display: none;
 	}
 
-	.rest-playground__pair-row .rest-playground__pair-input:nth-of-type(2) {
+	/* Every cell is placed explicitly. Four children over three columns means
+	   auto-placement would spill the remove button into an implicit fourth
+	   column, and positional selectors cannot tell the two text inputs apart
+	   from the checkbox — :nth-of-type() counts all inputs, so the name field
+	   is the one it reaches first. */
+	.rest-playground__pair-enabled {
+		grid-column: 1;
+		grid-row: 1;
+	}
+
+	.rest-playground__pair-input--name {
+		grid-column: 2;
+		grid-row: 1;
+	}
+
+	.rest-playground__pair-remove {
+		grid-column: 3;
+		grid-row: 1;
+	}
+
+	.rest-playground__pair-input--value {
 		grid-column: 2 / 4;
+		grid-row: 2;
 	}
 }

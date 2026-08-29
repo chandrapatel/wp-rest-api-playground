@@ -63,7 +63,7 @@ export const renderPairsGrid = (rows, idPrefix, labels = {}) => {
 						aria-label="Enable this row"
 					>
 					<input
-						class="rest-playground__field-input rest-playground__pair-input"
+						class="rest-playground__field-input rest-playground__pair-input rest-playground__pair-input--name"
 						type="text"
 						id="${safePrefix}-name-${index}"
 						data-pair-field="name"
@@ -74,7 +74,7 @@ export const renderPairsGrid = (rows, idPrefix, labels = {}) => {
 						aria-label="${escapeHtml(namePlaceholder)}"
 					>
 					<input
-						class="rest-playground__field-input rest-playground__pair-input"
+						class="rest-playground__field-input rest-playground__pair-input rest-playground__pair-input--value"
 						type="text"
 						id="${safePrefix}-value-${index}"
 						data-pair-field="value"
