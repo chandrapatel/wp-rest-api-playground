@@ -113,7 +113,7 @@ JS;
 		<line x1="12" y1="9" x2="12" y2="13"/>
 		<line x1="12" y1="17" x2="12.01" y2="17"/>
 	</svg>
-	<span><?php esc_html_e( 'Warning: This site is not using HTTPS. Application Password credentials are transmitted unencrypted and could be intercepted. Use HTTPS in production.', 'wp-rest-api-playground' ); ?></span>
+	<span><?php esc_html_e( 'Warning: This site is not using HTTPS. Passwords, tokens and API keys are transmitted unencrypted and could be intercepted. Use HTTPS in production.', 'wp-rest-api-playground' ); ?></span>
 </div>
 
 <div id="rest-playground" class="rest-playground">
@@ -130,33 +130,16 @@ JS;
 			</div>
 		</div>
 
-		<!-- Authentication -->
+		<!-- Authentication status — the editor itself lives in the Auth tab. -->
 		<div class="rest-playground__auth" id="rest-playground-auth">
-			<button type="button" class="rest-playground__auth-toggle" id="auth-toggle" aria-expanded="false" aria-controls="auth-form">
+			<button type="button" class="rest-playground__auth-toggle" id="auth-chip">
 				<svg class="rest-playground__auth-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
 					<rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
 					<path d="M7 11V7a5 5 0 0110 0v4"/>
 				</svg>
-				<span class="rest-playground__auth-status" id="auth-status"><?php esc_html_e( 'Authentication', 'wp-rest-api-playground' ); ?></span>
-				<svg class="rest-playground__auth-chevron" viewBox="0 0 16 16" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true">
-					<path d="M4 6l4 4 4-4"/>
-				</svg>
+				<span class="rest-playground__auth-status" id="auth-status"><?php esc_html_e( 'Logged-in user', 'wp-rest-api-playground' ); ?></span>
+				<span class="rest-playground__auth-chip-hint" aria-hidden="true"><?php esc_html_e( 'Edit', 'wp-rest-api-playground' ); ?></span>
 			</button>
-			<div class="rest-playground__auth-form" id="auth-form" hidden>
-				<p class="rest-playground__auth-help">
-					<?php esc_html_e( 'Use an Application Password from your WordPress profile to authenticate requests.', 'wp-rest-api-playground' ); ?>
-				</p>
-				<label class="rest-playground__field-label" for="auth-username"><?php esc_html_e( 'Username', 'wp-rest-api-playground' ); ?></label>
-				<input class="rest-playground__text-input" type="text" id="auth-username" autocomplete="username" placeholder="admin">
-
-				<label class="rest-playground__field-label" for="auth-password"><?php esc_html_e( 'Application Password', 'wp-rest-api-playground' ); ?></label>
-				<input class="rest-playground__text-input" type="password" id="auth-password" autocomplete="current-password" placeholder="xxxx xxxx xxxx xxxx xxxx xxxx">
-
-				<div class="rest-playground__auth-actions">
-					<button type="button" class="rest-playground__btn rest-playground__btn--primary" id="auth-save"><?php esc_html_e( 'Save', 'wp-rest-api-playground' ); ?></button>
-					<button type="button" class="rest-playground__btn rest-playground__btn--ghost" id="auth-clear"><?php esc_html_e( 'Clear', 'wp-rest-api-playground' ); ?></button>
-				</div>
-			</div>
 		</div>
 
 		<!-- Search -->
@@ -199,7 +182,7 @@ JS;
 				<ul class="rest-playground__tips">
 					<li><?php esc_html_e( 'Browse endpoints by category in the left sidebar.', 'wp-rest-api-playground' ); ?></li>
 					<li><?php esc_html_e( 'Use the search box to quickly find a specific route.', 'wp-rest-api-playground' ); ?></li>
-					<li><?php esc_html_e( 'Add an Application Password to test authenticated endpoints.', 'wp-rest-api-playground' ); ?></li>
+					<li><?php esc_html_e( 'Use the Auth tab to test endpoints as another user, or with a token or API key.', 'wp-rest-api-playground' ); ?></li>
 					<li><?php esc_html_e( 'Switch HTTP methods with the tabs above the request form.', 'wp-rest-api-playground' ); ?></li>
 				</ul>
 			</div>
@@ -217,25 +200,53 @@ JS;
 				</div>
 			</div>
 
+			<div class="rest-playground__tabs" id="request-tabs" role="tablist" aria-label="<?php esc_attr_e( 'Request sections', 'wp-rest-api-playground' ); ?>">
+				<button class="rest-playground__tab is-active" data-tab="params" type="button" role="tab" aria-selected="true" aria-controls="tab-pane-params" id="tab-btn-params">
+					<?php esc_html_e( 'Params', 'wp-rest-api-playground' ); ?>
+					<span class="rest-playground__tab-badge" hidden></span>
+				</button>
+				<button class="rest-playground__tab" data-tab="body" type="button" role="tab" aria-selected="false" aria-controls="tab-pane-body" id="tab-btn-body" tabindex="-1" hidden>
+					<?php esc_html_e( 'Body', 'wp-rest-api-playground' ); ?>
+					<span class="rest-playground__tab-badge" hidden></span>
+				</button>
+				<button class="rest-playground__tab" data-tab="auth" type="button" role="tab" aria-selected="false" aria-controls="tab-pane-auth" id="tab-btn-auth" tabindex="-1">
+					<?php esc_html_e( 'Auth', 'wp-rest-api-playground' ); ?>
+					<span class="rest-playground__tab-badge" hidden></span>
+				</button>
+				<button class="rest-playground__tab" data-tab="headers" type="button" role="tab" aria-selected="false" aria-controls="tab-pane-headers" id="tab-btn-headers" tabindex="-1">
+					<?php esc_html_e( 'Headers', 'wp-rest-api-playground' ); ?>
+					<span class="rest-playground__tab-badge" hidden></span>
+				</button>
+			</div>
+
 			<div class="rest-playground__request" id="rest-playground-request">
 
-				<!-- Path parameters -->
-				<section class="rest-playground__params-section" id="path-params-section" hidden>
-					<h2 class="rest-playground__section-title"><?php esc_html_e( 'Path Parameters', 'wp-rest-api-playground' ); ?></h2>
-					<div class="rest-playground__params-fields" id="path-params-fields"></div>
-				</section>
+				<div class="rest-playground__tab-pane" id="tab-pane-params" role="tabpanel" aria-labelledby="tab-btn-params" tabindex="0">
+					<!-- Path parameters -->
+					<section class="rest-playground__params-section" id="path-params-section" hidden>
+						<h2 class="rest-playground__section-title"><?php esc_html_e( 'Path Parameters', 'wp-rest-api-playground' ); ?></h2>
+						<div class="rest-playground__params-fields" id="path-params-fields"></div>
+					</section>
 
-				<!-- Query parameters (GET/DELETE) -->
-				<section class="rest-playground__params-section" id="query-params-section">
-					<h2 class="rest-playground__section-title"><?php esc_html_e( 'Query Parameters', 'wp-rest-api-playground' ); ?></h2>
-					<div class="rest-playground__params-fields" id="query-params-fields"></div>
-				</section>
+					<!-- Query parameters (GET/DELETE) -->
+					<section class="rest-playground__params-section" id="query-params-section">
+						<h2 class="rest-playground__section-title"><?php esc_html_e( 'Query Parameters', 'wp-rest-api-playground' ); ?></h2>
+						<div class="rest-playground__params-fields" id="query-params-fields"></div>
+					</section>
+				</div>
 
-				<!-- Request body (POST/PUT/PATCH) -->
-				<section class="rest-playground__params-section" id="body-section" hidden>
-					<h2 class="rest-playground__section-title"><?php esc_html_e( 'Request Body', 'wp-rest-api-playground' ); ?></h2>
-					<div id="body-fields"></div>
-				</section>
+				<div class="rest-playground__tab-pane" id="tab-pane-body" role="tabpanel" aria-labelledby="tab-btn-body" tabindex="0" hidden>
+					<!-- Request body (POST/PUT/PATCH) -->
+					<section class="rest-playground__params-section" id="body-section" hidden>
+						<div id="body-fields"></div>
+					</section>
+				</div>
+
+				<!-- Populated by render/authPanel.js -->
+				<div class="rest-playground__tab-pane" id="tab-pane-auth" role="tabpanel" aria-labelledby="tab-btn-auth" tabindex="0" hidden></div>
+
+				<!-- Populated by render/headersPanel.js -->
+				<div class="rest-playground__tab-pane" id="tab-pane-headers" role="tabpanel" aria-labelledby="tab-btn-headers" tabindex="0" hidden></div>
 
 			</div><!-- /.rest-playground__request -->
 

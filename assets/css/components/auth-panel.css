@@ -1,0 +1,384 @@
+/* ==========================================================================
+   Request tabs, Auth panel, and the shared name/value grid.
+   ========================================================================== */
+
+/* --- Tab bar ------------------------------------------------------------ */
+
+.rest-playground__tabs {
+	background: var(--rest-playground-card-bg);
+	border-bottom: 1px solid var(--rest-playground-border);
+	display: flex;
+	flex-shrink: 0;
+	gap: 2px;
+	overflow-x: auto;
+	padding: 0 20px;
+	scrollbar-width: none;
+}
+
+.rest-playground__tabs::-webkit-scrollbar {
+	display: none;
+}
+
+.rest-playground__tab {
+	align-items: center;
+	background: none;
+	border: none;
+
+	/* Transparent rather than absent so the tab does not shift by 2px when it
+	   becomes active. */
+	border-bottom: 2px solid transparent;
+	color: var(--rest-playground-muted);
+	cursor: pointer;
+	display: inline-flex;
+	font-family: inherit;
+	font-size: var(--rest-playground-font-md);
+	font-weight: 600;
+	gap: 6px;
+	padding: 11px 12px;
+	transition: color 0.15s, border-color 0.15s;
+	white-space: nowrap;
+}
+
+.rest-playground__tab:hover {
+	color: var(--rest-playground-text);
+}
+
+.rest-playground__tab.is-active {
+	border-bottom-color: var(--rest-playground-accent);
+	color: var(--rest-playground-accent);
+}
+
+.rest-playground__tab-badge {
+	background: var(--rest-playground-main-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: 999px;
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 700;
+	line-height: 1;
+	padding: 2px 6px;
+}
+
+.rest-playground__tab-badge--ok {
+	background: var(--rest-playground-success);
+	border-color: var(--rest-playground-success);
+	color: var(--rest-playground-white);
+}
+
+.rest-playground__tab-pane {
+	outline: none;
+}
+
+/* --- Auth panel --------------------------------------------------------- */
+
+.rest-playground__auth-panel {
+	max-width: 720px;
+}
+
+.rest-playground__auth-intro {
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-sm);
+	line-height: 1.6;
+	margin-bottom: 16px;
+	max-width: 68ch;
+}
+
+.rest-playground__auth-intro p {
+	margin: 0 0 8px;
+}
+
+.rest-playground__auth-intro strong {
+	color: var(--rest-playground-text);
+	font-weight: 600;
+}
+
+/* The session-lifetime caveat is the one line users must not skim past, so it
+   gets a rule and an icon rather than sitting in the paragraph flow. */
+.rest-playground__auth-intro p.rest-playground__auth-intro-note {
+	align-items: flex-start;
+	border-top: 1px solid var(--rest-playground-border);
+	display: flex;
+	gap: 8px;
+	margin-block: 12px 0;
+	padding-top: 10px;
+}
+
+.rest-playground__auth-intro-note svg {
+	color: var(--rest-playground-accent);
+	flex-shrink: 0;
+	height: 15px;
+	margin-top: 1px;
+	width: 15px;
+}
+
+.rest-playground__auth-bar {
+	align-items: center;
+	background: var(--rest-playground-card-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius);
+	display: flex;
+	flex-wrap: wrap;
+	gap: 10px;
+	margin-bottom: 20px;
+	padding: 12px;
+}
+
+.rest-playground__auth-bar-label {
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-sm);
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
+.rest-playground__auth-select {
+	flex: 1;
+	min-width: 180px;
+	width: auto;
+}
+
+.rest-playground__auth-bar-actions {
+	display: flex;
+	gap: 6px;
+}
+
+/* The shared ghost button is coloured for the dark sidebar; inside the light
+   main panel it needs the light-surface tokens instead. */
+.rest-playground__auth-bar .rest-playground__btn--ghost {
+	border-color: var(--rest-playground-border);
+	color: var(--rest-playground-muted);
+}
+
+.rest-playground__auth-bar .rest-playground__btn--ghost:hover {
+	background: var(--rest-playground-main-bg);
+	color: var(--rest-playground-text);
+}
+
+.rest-playground__btn--danger:hover:not(:disabled) {
+	border-color: var(--rest-playground-error);
+	color: var(--rest-playground-error);
+}
+
+.rest-playground__btn:disabled {
+	cursor: not-allowed;
+	opacity: 0.5;
+}
+
+.rest-playground__auth-fields {
+	margin-bottom: 16px;
+}
+
+/* --- Secret inputs ------------------------------------------------------ */
+
+.rest-playground__secret-row {
+	align-items: flex-start;
+	display: flex;
+	gap: 8px;
+}
+
+.rest-playground__secret-input {
+	font-family: var(--rest-playground-font-mono);
+}
+
+/* A textarea cannot be type="password", so mask it at the text level. Any
+   browser without support simply shows the token, which the reveal button
+   toggles anyway — no interaction is lost. */
+textarea.rest-playground__secret-input[data-masked="true"] {
+	-webkit-text-security: disc;
+}
+
+.rest-playground__reveal-btn {
+	align-items: center;
+	background: var(--rest-playground-card-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-muted);
+	cursor: pointer;
+	display: inline-flex;
+	flex-shrink: 0;
+	justify-content: center;
+	padding: 7px;
+	transition: border-color 0.15s, color 0.15s;
+}
+
+.rest-playground__reveal-btn:hover {
+	border-color: var(--rest-playground-accent);
+	color: var(--rest-playground-accent);
+}
+
+.rest-playground__reveal-btn svg {
+	height: 16px;
+	width: 16px;
+}
+
+/* --- "Will send" preview ------------------------------------------------ */
+
+.rest-playground__auth-preview {
+	background: var(--rest-playground-main-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius);
+	margin-bottom: 16px;
+	padding: 12px 14px;
+}
+
+.rest-playground__auth-preview--warn {
+	background: rgba(245, 158, 11, 0.08);
+	border-color: var(--rest-playground-warning);
+}
+
+.rest-playground__auth-preview-label {
+	color: var(--rest-playground-muted);
+	display: block;
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	margin-bottom: 6px;
+	text-transform: uppercase;
+}
+
+.rest-playground__auth-preview-lines {
+	display: flex;
+	flex-direction: column;
+	gap: 4px;
+}
+
+.rest-playground__auth-preview code {
+	color: var(--rest-playground-text);
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-base);
+
+	/* A long token must wrap rather than widen the panel past its track. */
+	overflow-wrap: anywhere;
+}
+
+.rest-playground__auth-preview-empty {
+	color: var(--rest-playground-muted);
+	font-style: italic;
+}
+
+/* --- Cookie override ---------------------------------------------------- */
+
+.rest-playground__auth-cookie {
+	border-top: 1px solid var(--rest-playground-border);
+	padding-top: 16px;
+}
+
+.rest-playground__auth-cookie .rest-playground__field-desc {
+	margin-inline-start: 24px;
+	max-width: 60ch;
+}
+
+/* --- Name/value grid ---------------------------------------------------- */
+
+.rest-playground__headers-panel {
+	max-width: 860px;
+}
+
+.rest-playground__headers-intro {
+	margin-block-end: 16px;
+	max-width: 70ch;
+}
+
+.rest-playground__headers-intro code {
+	background: var(--rest-playground-card-bg);
+	border: 1px solid var(--rest-playground-border);
+	border-radius: 3px;
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-xs);
+	padding: 1px 4px;
+}
+
+.rest-playground__pairs {
+	border: 1px solid var(--rest-playground-border);
+	border-radius: var(--rest-playground-radius);
+	overflow: hidden;
+}
+
+.rest-playground__pair-head,
+.rest-playground__pair-row {
+	align-items: center;
+	display: grid;
+	gap: 8px;
+	grid-template-columns: 24px minmax(0, 1fr) minmax(0, 1.6fr) 28px;
+	padding: 6px 10px;
+}
+
+.rest-playground__pair-head {
+	background: var(--rest-playground-main-bg);
+	border-bottom: 1px solid var(--rest-playground-border);
+	color: var(--rest-playground-muted);
+	font-size: var(--rest-playground-font-xs);
+	font-weight: 700;
+	letter-spacing: 0.07em;
+	text-transform: uppercase;
+}
+
+.rest-playground__pair-row + .rest-playground__pair-row {
+	border-top: 1px solid var(--rest-playground-border);
+}
+
+.rest-playground__pair-input {
+	font-family: var(--rest-playground-font-mono);
+	font-size: var(--rest-playground-font-base);
+	padding: 5px 8px;
+}
+
+.rest-playground__pair-remove {
+	align-items: center;
+	background: none;
+	border: none;
+	border-radius: var(--rest-playground-radius);
+	color: var(--rest-playground-muted);
+	cursor: pointer;
+	display: inline-flex;
+	justify-content: center;
+	padding: 4px;
+	transition: background 0.15s, color 0.15s;
+}
+
+.rest-playground__pair-remove:hover:not(:disabled) {
+	background: rgba(239, 68, 68, 0.1);
+	color: var(--rest-playground-error);
+}
+
+.rest-playground__pair-remove:disabled {
+	cursor: default;
+	opacity: 0.25;
+}
+
+.rest-playground__pair-remove svg {
+	height: 14px;
+	width: 14px;
+}
+
+/* --- Code tab redaction toggle ------------------------------------------ */
+
+.rest-playground__redact-toggle {
+	align-items: center;
+	color: var(--rest-playground-chrome-muted);
+	cursor: pointer;
+	display: inline-flex;
+	font-size: var(--rest-playground-font-sm);
+	gap: 6px;
+	margin-inline-start: auto;
+	user-select: none;
+	white-space: nowrap;
+}
+
+@media (max-width: 900px) {
+
+	.rest-playground__pair-head,
+	.rest-playground__pair-row {
+		grid-template-columns: 24px minmax(0, 1fr) 28px;
+	}
+
+	/* The value column drops below the name on narrow screens; the header row
+	   would no longer line up with it, so it is dropped instead. */
+	.rest-playground__pair-head span:nth-child(3) {
+		display: none;
+	}
+
+	.rest-playground__pair-row .rest-playground__pair-input:nth-of-type(2) {
+		grid-column: 2 / 4;
+	}
+}

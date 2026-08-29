@@ -22,6 +22,58 @@ const escapeForStr = (str) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const escapeForShell = (str) => str.replace(/'/g, "'\\''");
 
 /**
+ * Choose the placeholder that stands in for a redacted credential.
+ *
+ * Keeping the scheme word makes the snippet self-documenting — a reader can see
+ * it needs a bearer token rather than a base64 pair — without carrying the
+ * secret itself.
+ *
+ * @param {string} value - The real header value.
+ * @returns {string}
+ */
+const placeholderFor = (value) => {
+	const scheme = /^(\w+)\s+\S/.exec(value)?.[1];
+	if (!scheme) return 'YOUR_API_KEY';
+	if (scheme.toLowerCase() === 'basic') return 'Basic YOUR_BASE64_CREDENTIALS';
+	return `${scheme} YOUR_TOKEN`;
+};
+
+/**
+ * Replace credential values with placeholders before a snippet is generated.
+ *
+ * Snippets exist to be pasted into docs, tickets and chat, so the safe default
+ * is to leave the secret behind. The Code tab exposes a toggle to opt out.
+ *
+ * @param {string} url - The request URL.
+ * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
+ * @returns {{ url: string, options: { method: string, headers: Record<string,string>, body?: string } }}
+ */
+export const redactSecrets = (url, options, meta = {}) => {
+	const secretHeaders = meta.secretHeaders ?? [];
+	const secretQuery = meta.secretQuery ?? [];
+
+	const headers = { ...options.headers };
+	secretHeaders.forEach((name) => {
+		if (name in headers) headers[name] = placeholderFor(headers[name]);
+	});
+
+	let redactedUrl = url;
+	if (secretQuery.length) {
+		const qIdx = url.indexOf('?');
+		if (qIdx !== -1) {
+			const params = new URLSearchParams(url.slice(qIdx + 1));
+			secretQuery.forEach((name) => {
+				if (params.has(name)) params.set(name, 'YOUR_API_KEY');
+			});
+			redactedUrl = `${url.slice(0, qIdx)}?${params.toString()}`;
+		}
+	}
+
+	return { url: redactedUrl, options: { ...options, headers } };
+};
+
+/**
  * Parse a URL into its base path and a plain object of query params.
  *
  * @param {string} url - The URL to parse.
@@ -75,11 +127,11 @@ const toPhpLiteral = (value, indent = 1) => {
  * X-WP-Nonce is omitted — it is browser-only and not useful outside the playground context.
  *
  * @param {string} url                                                            - The request URL.
- * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ method: string, headers: Record<string,string>, body?: string, credentials?: string }} options - Fetch options.
  * @returns {string}
  */
 export const generateJsCode = (url, options) => {
-	const { method, headers, body } = options;
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 	const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(method);
 	const { base, params: queryParams } = isGet ? parseUrl(url) : { base: url, params: {} };
@@ -124,10 +176,6 @@ export const generateJsCode = (url, options) => {
 		code += `            '${escapeForStr(key)}': '${escapeForStr(val)}',\n`;
 	});
 
-	if (!isGet && !('Authorization' in headers)) {
-		code += `            'Authorization': 'Basic YOUR_BASE64_CREDENTIALS',\n`;
-	}
-
 	code += `        },\n`;
 
 	if (isBodyMethod && body) {
@@ -137,6 +185,14 @@ export const generateJsCode = (url, options) => {
 		} catch {
 			code += `        body: ${JSON.stringify(body)},\n`;
 		}
+	}
+
+	// Carried through deliberately. Run from a page on the same site, fetch would
+	// otherwise default to sending the login cookie, which WordPress resolves
+	// before the Authorization header — the snippet would quietly run as the
+	// logged-in user instead of as the credential it appears to use.
+	if (credentials) {
+		code += `        credentials: '${escapeForStr(credentials)}',\n`;
 	}
 
 	code += `    }\n`;
@@ -177,10 +233,6 @@ export const generateCurlCode = (url, options) => {
 		parts.push(`  --header '${escapeForShell(key)}: ${escapeForShell(val)}'`);
 	});
 
-	if (!isGet && !('Authorization' in headers)) {
-		parts.push(`  --header 'Authorization: Basic YOUR_BASE64_CREDENTIALS'`);
-	}
-
 	if (body) {
 		try {
 			const pretty = JSON.stringify(JSON.parse(body));
@@ -199,7 +251,7 @@ export const generateCurlCode = (url, options) => {
  * - POST       : wp_remote_post() with $params variable passed through wp_json_encode().
  * - PUT/PATCH  : wp_remote_post() with explicit 'method' and $params variable.
  * - DELETE     : wp_remote_post() with explicit 'method', no body.
- * X-WP-Nonce is omitted — it is browser-only; Application Password handles auth server-side.
+ * X-WP-Nonce is omitted — it is browser-only; the Authorization header carries auth server-side.
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
@@ -243,10 +295,6 @@ export const generatePhpCode = (url, options) => {
 		if (key === 'X-WP-Nonce') return;
 		code += `            '${escapeForStr(key)}' => '${escapeForStr(val)}',\n`;
 	});
-
-	if (!isGet && !('Authorization' in headers)) {
-		code += `            'Authorization' => 'Basic YOUR_BASE64_CREDENTIALS',\n`;
-	}
 
 	code += `        ],\n`;
 

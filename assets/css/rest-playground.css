@@ -11,6 +11,7 @@
 @import "./components/main-panel.css";
 @import "./components/resizer.css";
 @import "./components/request-form.css";
+@import "./components/auth-panel.css";
 @import "./components/buttons.css";
 @import "./components/response-panel.css";
 @import "./components/json-viewer.css";

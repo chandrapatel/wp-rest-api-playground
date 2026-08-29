@@ -35,7 +35,7 @@
 	width: 20px;
 }
 
-/* Authentication toggle */
+/* Authentication chip — status only; the editor lives in the Auth tab. */
 .rest-playground__auth {
 	border-bottom: 1px solid var(--rest-playground-chrome-border);
 	flex-shrink: 0;
@@ -78,64 +78,21 @@
 	white-space: nowrap;
 }
 
-.rest-playground__auth-chevron {
+/* "Edit" affordance — revealed on hover/focus so the
+   resting chip stays quiet. */
+.rest-playground__auth-chip-hint {
+	color: var(--rest-playground-chrome-muted);
 	flex-shrink: 0;
-	height: 14px;
-	transition: transform 0.2s;
-	width: 14px;
-}
-
-.rest-playground__auth-toggle[aria-expanded="true"] .rest-playground__auth-chevron {
-	transform: rotate(180deg);
-}
-
-.rest-playground__auth-form {
-	background: var(--rest-playground-chrome-surface);
-	border-top: 1px solid var(--rest-playground-chrome-border);
-	padding: 12px 16px 16px;
-}
-
-.rest-playground__auth-help {
-	color: var(--rest-playground-chrome-muted);
-	font-size: var(--rest-playground-font-sm);
-	line-height: 1.6;
-	margin: 0 0 12px;
-}
-
-.rest-playground__field-label {
-	color: var(--rest-playground-chrome-muted);
-	display: block;
-	font-size: var(--rest-playground-font-sm);
-	font-weight: 600;
-	letter-spacing: 0.05em;
-	margin-bottom: 4px;
+	font-size: var(--rest-playground-font-xs);
+	letter-spacing: 0.06em;
+	opacity: 0;
 	text-transform: uppercase;
+	transition: opacity 0.15s;
 }
 
-.rest-playground__text-input {
-	background: var(--rest-playground-chrome-bg);
-	border: 1px solid var(--rest-playground-chrome-border);
-	border-radius: var(--rest-playground-radius);
-	color: var(--rest-playground-chrome-text);
-	display: block;
-	font-family: inherit;
-	font-size: var(--rest-playground-font-md);
-	margin-bottom: 10px;
-	outline: none;
-	padding: 7px 10px;
-	transition: border-color 0.15s;
-	width: 100%;
-}
-
-.rest-playground__text-input:focus {
-	border-color: var(--rest-playground-accent);
-	box-shadow: 0 0 0 3px var(--rest-playground-accent-light);
-}
-
-.rest-playground__auth-actions {
-	display: flex;
-	gap: 8px;
-	margin-top: 4px;
+.rest-playground__auth-toggle:hover .rest-playground__auth-chip-hint,
+.rest-playground__auth-toggle:focus-visible .rest-playground__auth-chip-hint {
+	opacity: 1;
 }
 
 /* Search */
