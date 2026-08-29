@@ -84,6 +84,19 @@ const stripSpaces = (value) => value.replace(/\s+/g, '');
 const basicHeader = (user, pass) => `Basic ${utf8Base64(`${user}:${pass}`)}`;
 
 /**
+ * Whether a field holds something other than whitespace.
+ *
+ * Validation has to agree with what apply() will actually send. A password of
+ * three spaces is truthy, but stripSpaces() reduces it to nothing, so the
+ * profile counted as complete and then sent `admin:` — a partial credential,
+ * with the login cookie already suppressed, and no explanation on screen.
+ *
+ * @param {unknown} value - Raw field value.
+ * @returns {boolean}
+ */
+const filled = (value) => typeof value === 'string' && value.trim() !== '';
+
+/**
  * Collect the enabled, named rows of a `pairs` field into a plain object.
  *
  * Later rows win on a duplicate name, matching how a headers list is normally
@@ -146,7 +159,7 @@ export const AUTH_SCHEMES = {
 			},
 		],
 		validate: (config) =>
-			config.username && config.password
+			filled(config.username) && filled(config.password)
 				? null
 				: 'Enter both a username and an application password.',
 		summary: (config) => config.username || 'Application password',
@@ -168,8 +181,12 @@ export const AUTH_SCHEMES = {
 			{ key: 'username', label: 'Username', type: 'text' },
 			{ key: 'password', label: 'Password', type: 'secret' },
 		],
+		// Either half alone is legitimate — some APIs put a token in the username
+		// and leave the password blank — but whitespace in both is not.
 		validate: (config) =>
-			config.username || config.password ? null : 'Enter a username or a password.',
+			filled(config.username) || filled(config.password)
+				? null
+				: 'Enter a username or a password.',
 		summary: (config) => config.username || 'Basic auth',
 		apply: (config) => ({
 			headers: { Authorization: basicHeader(config.username ?? '', config.password ?? '') },
@@ -195,7 +212,7 @@ export const AUTH_SCHEMES = {
 				help: 'The scheme word placed before the token.',
 			},
 		],
-		validate: (config) => (config.token?.trim() ? null : 'Enter a token.'),
+		validate: (config) => (filled(config.token) ? null : 'Enter a token.'),
 		summary: () => 'Bearer token',
 		// Trimmed because tokens are almost always pasted, and a copied JWT
 		// tends to bring a trailing newline with it — which would otherwise be
@@ -229,15 +246,15 @@ export const AUTH_SCHEMES = {
 		// filled in would send an empty header while still suppressing the login
 		// cookie, which reads as an unexplained authentication failure.
 		validate: (config) => {
-			if (!config.name?.trim()) return 'Enter a key name.';
-			if (!config.value) return 'Enter a key value.';
+			if (!filled(config.name)) return 'Enter a key name.';
+			if (!filled(config.value)) return 'Enter a key value.';
 			return null;
 		},
 		summary: (config) => config.name?.trim() || 'API key',
 		apply: (config) => {
 			const name = (config.name ?? '').trim();
 			if (!name) return {};
-			const value = config.value ?? '';
+			const value = (config.value ?? '').trim();
 			return config.location === 'query'
 				? { query: { [name]: value }, secretQuery: [name] }
 				: { headers: { [name]: value }, secretHeaders: [name] };

@@ -309,6 +309,10 @@ const bindAuthPanel = (rerender) => {
 
 	document.getElementById('auth-send-cookie')?.addEventListener('change', (event) => {
 		setSendWpCookie(/** @type {HTMLInputElement} */ (event.target).checked);
+		// The preview reads shouldSendWpCookie(), so this control is precisely
+		// the one that invalidates it. Patched in place rather than re-rendered,
+		// which would move focus off the checkbox mid-interaction.
+		refreshPreview();
 		onAuthChanged();
 	});
 

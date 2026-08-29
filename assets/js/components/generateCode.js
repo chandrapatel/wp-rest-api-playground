@@ -111,13 +111,22 @@ const isContentTypeHeader = (key) => key.toLowerCase() === 'content-type';
  *
  * @param {string|undefined} credentials - The fetch credentials mode used.
  * @param {string} commentToken - Line-comment prefix for the target language.
+ * @param {Record<string,string>} [headers] - Request headers, checked for a credential.
  * @returns {string} Comment block, or an empty string when not applicable.
  */
-const cookieCaveat = (credentials, commentToken) => {
+const cookieCaveat = (credentials, commentToken, headers = {}) => {
 	if (credentials !== 'same-origin' && credentials !== 'include') return '';
+
+	// With an Authorization header the snippet still carries a working
+	// credential, so it is runnable and the warning would be simply wrong. This
+	// happens whenever "Also send WordPress cookie + nonce" is ticked alongside
+	// a real profile — the cookie is the part that is lost, not the auth.
+	const hasCredential = Object.keys(headers).some((key) => key.toLowerCase() === 'authorization');
+	if (hasCredential) return '';
+
 	return (
-		`${commentToken} This request authenticates with your browser's login cookie, which\n` +
-		`${commentToken} this snippet cannot send — it will run as a logged-out visitor.\n` +
+		`${commentToken} This snippet cannot send your browser's login cookie, so it will not be\n` +
+		`${commentToken} authenticated by your WordPress session.\n` +
 		`${commentToken} Use an Application Password profile for a runnable equivalent.\n\n`
 	);
 };
@@ -305,7 +314,7 @@ export const generateCurlCode = (url, options) => {
 		}
 	}
 
-	return cookieCaveat(credentials, '#') + parts.join(' \\\n');
+	return cookieCaveat(credentials, '#', headers) + parts.join(' \\\n');
 };
 
 /**
@@ -333,7 +342,7 @@ export const generatePhpCode = (url, options) => {
 	const fnName = isGet ? 'wp_remote_get' : 'wp_remote_post';
 	const baseUrl = isGet ? base : url;
 
-	let code = cookieCaveat(credentials, '//');
+	let code = cookieCaveat(credentials, '//', headers);
 
 	// POST/PUT/PATCH: $params variable.
 	if (isBodyMethod && body) {

@@ -148,6 +148,11 @@
 
 .rest-playground__auth-bar-actions {
 	display: flex;
+
+	/* Four padded buttons exceed the inner width of a 320px viewport, and the
+	   group is a single flex item in the bar above, so it has to wrap
+	   internally or it pushes the panel into horizontal overflow. */
+	flex-wrap: wrap;
 	gap: 6px;
 }
 

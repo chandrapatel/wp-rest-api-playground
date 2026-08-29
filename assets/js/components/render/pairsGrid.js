@@ -221,7 +221,16 @@ export const bindPairsGrid = (container, onChange, rerender) => {
 				container.ownerDocument.getElementById(`${prefix}-remove-${i}`)
 			);
 		const next = at(index);
-		const target = next && !next.disabled ? next : at(index - 1);
-		if (target && !target.disabled) target.focus();
+		const previous = at(index - 1);
+		if (next && !next.disabled) {
+			next.focus();
+		} else if (previous && !previous.disabled) {
+			previous.focus();
+		} else {
+			// Deleting the only real row leaves nothing but the disabled blank
+			// one, so put the caret in its name field — the user is most likely
+			// about to type a replacement.
+			container.ownerDocument.getElementById(`${prefix}-name-0`)?.focus();
+		}
 	});
 };
