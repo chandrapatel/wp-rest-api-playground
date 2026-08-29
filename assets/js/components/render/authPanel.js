@@ -14,6 +14,7 @@ import {
 	deleteProfile,
 	duplicateProfile,
 	getActiveProfile,
+	hasCustomAuthorizationHeader,
 	renameProfile,
 	setActiveProfile,
 	setActiveType,
@@ -363,7 +364,10 @@ export const renderAuthPanel = () => {
 
 	const scheme = getScheme(active.type);
 	const cookieOn = shouldSendWpCookie();
-	const cookieForced = active.type === 'none';
+	// A custom Authorization header makes even the cookie profile a credential
+	// request, so the choice stops being forced and becomes the user's.
+	const customAuth = hasCustomAuthorizationHeader();
+	const cookieForced = active.type === 'none' && !customAuth;
 
 	const profileOptions = state.auth.profiles
 		.map(
@@ -453,9 +457,12 @@ export const renderAuthPanel = () => {
 				</div>
 				<p class="rest-playground__field-desc">
 					${
+						// eslint-disable-next-line no-nested-ternary
 						cookieForced
 							? 'This profile authenticates purely by your login cookie, so it is always sent.'
-							: 'Leave this off to authenticate as the credential above. WordPress resolves the login cookie before the Authorization header, so with both present your own account wins and the credential is ignored.'
+							: customAuth && active.type === 'none'
+								? 'The Headers tab is supplying an Authorization header, so the cookie is held back by default — WordPress would resolve it first and ignore that header.'
+								: 'Leave this off to authenticate as the credential above. WordPress resolves the login cookie before the Authorization header, so with both present your own account wins and the credential is ignored.'
 					}
 				</p>
 			</div>

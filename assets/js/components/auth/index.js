@@ -7,7 +7,7 @@
  */
 
 import { state } from '../state';
-import { defaultConfig, getScheme, hasScheme, DEFAULT_SCHEME } from './schemes';
+import { defaultConfig, getScheme, hasScheme, pairsToObject, DEFAULT_SCHEME } from './schemes';
 
 const STORAGE_KEY = 'wp-rest-playground-auth-v2';
 
@@ -339,9 +339,22 @@ export const updateActiveConfig = (key, value) => {
  *
  * @returns {boolean}
  */
+export const hasCustomAuthorizationHeader = () =>
+	Object.keys(pairsToObject(state.customHeaders)).some(
+		(name) => name.toLowerCase() === 'authorization',
+	);
+
 export const shouldSendWpCookie = () => {
+	// An Authorization header typed into the Headers tab is a credential just as
+	// much as one the Auth tab produced, and it loses to the cookie in exactly
+	// the same way. Treating only the profile as "a credential is present" left
+	// the default profile sending cookie, nonce and header together — the very
+	// conflict this is meant to avoid.
 	const active = getActiveProfile();
-	if (!active || active.type === 'none') return true;
+	const suppliesCredential =
+		(!!active && active.type !== 'none') || hasCustomAuthorizationHeader();
+
+	if (!suppliesCredential) return true;
 	return state.auth.sendWpCookie === true;
 };
 

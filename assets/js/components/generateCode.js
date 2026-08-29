@@ -82,6 +82,27 @@ export const redactSecrets = (url, options, meta = {}) => {
 };
 
 /**
+ * Warn that a snippet cannot reproduce browser cookie authentication.
+ *
+ * curl and wp_remote_* run outside the browser, so neither carries the login
+ * cookie the playground relied on — they would execute anonymously. Presenting
+ * them as equivalents without saying so is the more misleading option, since
+ * the request appears to work in the panel and then behaves differently.
+ *
+ * @param {string|undefined} credentials - The fetch credentials mode used.
+ * @param {string} commentToken - Line-comment prefix for the target language.
+ * @returns {string} Comment block, or an empty string when not applicable.
+ */
+const cookieCaveat = (credentials, commentToken) => {
+	if (credentials !== 'same-origin' && credentials !== 'include') return '';
+	return (
+		`${commentToken} This request authenticates with your browser's login cookie, which\n` +
+		`${commentToken} this snippet cannot send — it will run as a logged-out visitor.\n` +
+		`${commentToken} Use an Application Password profile for a runnable equivalent.\n\n`
+	);
+};
+
+/**
  * Parse a URL into its base path and a plain object of query params.
  *
  * @param {string} url - The URL to parse.
@@ -238,7 +259,7 @@ export const generateJsCode = (url, options) => {
  * @returns {string}
  */
 export const generateCurlCode = (url, options) => {
-	const { method, headers, body } = options;
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 
 	/** @type {string[]} */
@@ -265,7 +286,7 @@ export const generateCurlCode = (url, options) => {
 		}
 	}
 
-	return parts.join(' \\\n');
+	return cookieCaveat(credentials, '#') + parts.join(' \\\n');
 };
 
 /**
@@ -274,14 +295,16 @@ export const generateCurlCode = (url, options) => {
  * - POST       : wp_remote_post() with $params variable passed through wp_json_encode().
  * - PUT/PATCH  : wp_remote_post() with explicit 'method' and $params variable.
  * - DELETE     : wp_remote_post() with explicit 'method', no body.
- * X-WP-Nonce is omitted — it is browser-only; the Authorization header carries auth server-side.
+ * X-WP-Nonce is omitted — it is browser-only, and useless here without the
+ * matching cookie, which PHP cannot send either; cookie-mode requests get a
+ * comment saying so rather than a snippet that quietly runs logged out.
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
  * @returns {string}
  */
 export const generatePhpCode = (url, options) => {
-	const { method, headers, body } = options;
+	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 	const isPost = method === 'POST';
 	const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(method);
@@ -291,7 +314,7 @@ export const generatePhpCode = (url, options) => {
 	const fnName = isGet ? 'wp_remote_get' : 'wp_remote_post';
 	const baseUrl = isGet ? base : url;
 
-	let code = '';
+	let code = cookieCaveat(credentials, '//');
 
 	// POST/PUT/PATCH: $params variable.
 	if (isBodyMethod && body) {

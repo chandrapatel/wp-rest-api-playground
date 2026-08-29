@@ -51,6 +51,41 @@ const CREDENTIAL_HEADER_PATTERN =
 	/(^|-)(authorization|auth|token|secret|password|key|cookie|credential)(-|$)/i;
 
 /**
+ * Header names the Fetch spec forbids a page from setting.
+ *
+ * The browser drops these silently, so accepting one would leave the preview
+ * and the Code tab claiming a header that never leaves. `Cookie` is the one
+ * users reach for most — session auth belongs to the Auth tab, which sends the
+ * real cookie via `credentials`.
+ */
+const FORBIDDEN_HEADERS = new Set([
+	'accept-charset',
+	'accept-encoding',
+	'access-control-request-headers',
+	'access-control-request-method',
+	'connection',
+	'content-length',
+	'cookie',
+	'cookie2',
+	'date',
+	'dnt',
+	'expect',
+	'host',
+	'keep-alive',
+	'origin',
+	'referer',
+	'set-cookie',
+	'te',
+	'trailer',
+	'transfer-encoding',
+	'upgrade',
+	'via',
+]);
+
+/** `Proxy-` and `Sec-` prefixed names are forbidden as a class. */
+const FORBIDDEN_HEADER_PREFIX = /^(proxy|sec)-/i;
+
+/**
  * Merge headers into a target object, rejecting anything malformed.
  *
  * @param {Record<string,string>} target - Accumulating header map, mutated.
@@ -70,14 +105,22 @@ const mergeHeaders = (target, source) => {
 			);
 		}
 
+		const lowerName = name.toLowerCase();
+		if (FORBIDDEN_HEADERS.has(lowerName) || FORBIDDEN_HEADER_PREFIX.test(lowerName)) {
+			throw new RequestBuildError(
+				lowerName === 'cookie'
+					? 'Browsers do not let a page set the "Cookie" header. Use the Auth tab — the Logged-in User profile sends your session cookie with the request.'
+					: `Browsers do not let a page set the "${name}" header; it would be dropped before the request was sent.`,
+			);
+		}
+
 		// Header names are case-insensitive, but object keys are not. Left alone,
 		// "content-type" and "Content-Type" both survive into the init object and
 		// fetch's Headers *appends* on the collision — the request would go out
 		// with "application/json, text/plain" rather than the override the user
 		// asked for. Drop any prior spelling so the last one written wins.
-		const lower = name.toLowerCase();
 		Object.keys(target).forEach((existing) => {
-			if (existing !== name && existing.toLowerCase() === lower) {
+			if (existing !== name && existing.toLowerCase() === lowerName) {
 				delete target[existing];
 			}
 		});
