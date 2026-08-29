@@ -83,34 +83,26 @@ const renderAuthField = (field, config) => {
 			</select>
 		`;
 	} else if (field.type === 'secret') {
-		const inputType = revealSecrets ? 'text' : 'password';
-		const inner = field.multiline
-			? `<textarea
-					class="rest-playground__field-input rest-playground__field-textarea rest-playground__secret-input"
-					id="${id}"
-					data-auth-key="${escapeHtml(field.key)}"
-					rows="3"
-					spellcheck="false"
-					autocomplete="off"
-					placeholder="${escapeHtml(field.placeholder ?? '')}"
-					${revealSecrets ? '' : 'data-masked="true"'}
-				>${escapeHtml(value)}</textarea>`
-			: `<input
+		// Always a password input: masking has to come from the control itself,
+		// since a CSS-masked textarea would leave the value readable wherever
+		// -webkit-text-security is unsupported while the button still claimed it
+		// was hidden.
+		control = `
+			<div class="rest-playground__secret-row">
+				<input
 					class="rest-playground__field-input rest-playground__secret-input"
-					type="${inputType}"
+					type="${revealSecrets ? 'text' : 'password'}"
 					id="${id}"
 					data-auth-key="${escapeHtml(field.key)}"
 					value="${escapeHtml(value)}"
 					spellcheck="false"
 					autocomplete="off"
 					placeholder="${escapeHtml(field.placeholder ?? '')}"
-				>`;
-		control = `
-			<div class="rest-playground__secret-row">
-				${inner}
+				>
 				<button
 					class="rest-playground__reveal-btn"
 					type="button"
+					id="${id}-reveal"
 					data-auth-reveal="1"
 					aria-pressed="${revealSecrets}"
 					aria-label="${revealSecrets ? 'Hide secret values' : 'Show secret values'}"
@@ -230,9 +222,45 @@ const bindAuthPanel = (rerender) => {
 	const pane = document.getElementById('tab-pane-auth');
 	if (!pane) return;
 
+	/**
+	 * Re-render without ejecting the keyboard.
+	 *
+	 * Every mutation here replaces the whole pane, including the control that
+	 * triggered it, which would otherwise drop focus to the top of the document.
+	 * Element ids are stable across renders, so the same control can be picked
+	 * back up — falling back to the profile selector when it no longer exists or
+	 * has become disabled, as Delete does once one profile is left.
+	 */
+	const rerenderKeepingFocus = () => {
+		const active = /** @type {HTMLInputElement|null} */ (pane.ownerDocument.activeElement);
+		const id = active?.id ?? '';
+		const start = active?.selectionStart ?? null;
+		const end = active?.selectionEnd ?? null;
+
+		rerender();
+
+		const previous = /** @type {HTMLInputElement|null} */ (
+			id ? document.getElementById(id) : null
+		);
+		const target =
+			previous && !previous.disabled
+				? previous
+				: document.getElementById('auth-profile-select');
+		if (!target) return;
+
+		target.focus();
+		if (target === previous && start !== null && target.setSelectionRange) {
+			try {
+				target.setSelectionRange(start, end);
+			} catch {
+				// Not a text-like control — focus alone is enough.
+			}
+		}
+	};
+
 	/** Re-render and notify the shell that the credential summary changed. */
 	const refresh = () => {
-		rerender();
+		rerenderKeepingFocus();
 		onAuthChanged();
 	};
 
@@ -298,7 +326,9 @@ const bindAuthPanel = (rerender) => {
 	pane.querySelectorAll('[data-auth-reveal]').forEach((button) => {
 		button.addEventListener('click', () => {
 			revealSecrets = !revealSecrets;
-			rerender();
+			// Same treatment as the other mutations: the button re-renders itself
+			// out of existence, and its replacement carries the same id.
+			rerenderKeepingFocus();
 		});
 	});
 

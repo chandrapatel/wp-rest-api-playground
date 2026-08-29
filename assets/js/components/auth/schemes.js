@@ -50,7 +50,6 @@ export const maskSecret = (value) => {
  * @property {string}   [placeholder]
  * @property {string}   [help]      - Hint shown under the control.
  * @property {string}   [default]   - Value used when the config key is unset.
- * @property {boolean}  [multiline] - Render a textarea (secret/text only).
  * @property {Array<[string, string]>} [options] - [value, label] for `select`.
  * @property {(value: string) => string} [normalize] - Applied before use.
  */
@@ -182,7 +181,12 @@ export const AUTH_SCHEMES = {
 		label: 'Bearer Token',
 		help: 'Sent as an Authorization header. Used by JWT plugins and most token-based APIs.',
 		fields: [
-			{ key: 'token', label: 'Token', type: 'secret', multiline: true },
+			// Single-line on purpose. A header value cannot contain a line break
+			// — buildRequest() rejects one — so a textarea only invites input the
+			// request would refuse, and a masked textarea depends on
+			// -webkit-text-security, which not every engine honours. A password
+			// input is masked natively everywhere.
+			{ key: 'token', label: 'Token', type: 'secret' },
 			{
 				key: 'prefix',
 				label: 'Prefix',
@@ -191,11 +195,14 @@ export const AUTH_SCHEMES = {
 				help: 'The scheme word placed before the token.',
 			},
 		],
-		validate: (config) => (config.token ? null : 'Enter a token.'),
+		validate: (config) => (config.token?.trim() ? null : 'Enter a token.'),
 		summary: () => 'Bearer token',
+		// Trimmed because tokens are almost always pasted, and a copied JWT
+		// tends to bring a trailing newline with it — which would otherwise be
+		// rejected as a line break in a header value.
 		apply: (config) => ({
 			headers: {
-				Authorization: `${(config.prefix ?? '').trim() || 'Bearer'} ${config.token ?? ''}`,
+				Authorization: `${(config.prefix ?? '').trim() || 'Bearer'} ${(config.token ?? '').trim()}`,
 			},
 			secretHeaders: ['Authorization'],
 		}),

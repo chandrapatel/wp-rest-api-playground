@@ -180,13 +180,6 @@
 	font-family: var(--rest-playground-font-mono);
 }
 
-/* A textarea cannot be type="password", so mask it at the text level. Any
-   browser without support simply shows the token, which the reveal button
-   toggles anyway — no interaction is lost. */
-textarea.rest-playground__secret-input[data-masked="true"] {
-	-webkit-text-security: disc;
-}
-
 .rest-playground__reveal-btn {
 	align-items: center;
 	background: var(--rest-playground-card-bg);

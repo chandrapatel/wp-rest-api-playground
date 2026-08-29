@@ -39,6 +39,18 @@ export class RequestBuildError extends Error {
 const HEADER_NAME_PATTERN = /^[!#$%&'*+\-.^_`|~0-9A-Za-z]+$/;
 
 /**
+ * Header names whose value is treated as a credential in generated snippets.
+ *
+ * Matched on whole hyphen-separated words, so `X-Api-Key` and `X-Auth-Token`
+ * are caught while `X-Monkey` is not. Deliberately errs toward redacting: a
+ * needlessly masked debug header is a small annoyance, a leaked token pasted
+ * into a ticket is not. Names the user has not spelled recognisably are still
+ * missed, which is why the Code tab keeps its explicit reveal control.
+ */
+const CREDENTIAL_HEADER_PATTERN =
+	/(^|-)(authorization|auth|token|secret|password|key|cookie|credential)(-|$)/i;
+
+/**
  * Merge headers into a target object, rejecting anything malformed.
  *
  * @param {Record<string,string>} target - Accumulating header map, mutated.
@@ -125,6 +137,20 @@ export const buildRequest = () => {
 	mergeHeaders(headers, authHeaders);
 	mergeHeaders(headers, pairsToObject(state.customHeaders));
 
+	// A row in the Headers tab can carry a credential just as readily as the
+	// Auth tab can — overriding one the scheme set, or supplying one where the
+	// profile sets none. Those names have to reach the Code tab as secrets too,
+	// or the snippet prints a live token and does not even offer the control to
+	// hide it.
+	//
+	// Derived from the merged headers rather than accumulated alongside them, so
+	// the names always match what is actually being sent: an override changes the
+	// spelling of a key, and listing both would be meaningless.
+	const declaredSecrets = new Set(secretHeaders.map((name) => name.toLowerCase()));
+	const finalSecretHeaders = Object.keys(headers).filter(
+		(name) => declaredSecrets.has(name.toLowerCase()) || CREDENTIAL_HEADER_PATTERN.test(name),
+	);
+
 	const isBodyMethod = ['POST', 'PUT', 'PATCH'].includes(method);
 	let body;
 
@@ -208,7 +234,7 @@ export const buildRequest = () => {
 		},
 		// Kept beside `options` rather than inside it: that object goes straight
 		// to fetch(), which must not receive keys it does not understand.
-		meta: { secretHeaders, secretQuery },
+		meta: { secretHeaders: finalSecretHeaders, secretQuery },
 	};
 };
 
