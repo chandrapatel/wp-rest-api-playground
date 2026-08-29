@@ -6,6 +6,20 @@
 	display: none !important;
 }
 
+/* Available to assistive technology but not on screen. Clipped rather than
+   hidden with display or visibility, either of which would take it out of the
+   accessibility tree along with the sighted layout. */
+.rest-playground__sr-only {
+	border: 0;
+	clip-path: inset(50%);
+	height: 1px;
+	overflow: hidden;
+	padding: 0;
+	position: absolute;
+	white-space: nowrap;
+	width: 1px;
+}
+
 /* HTTPS warning banner */
 .rest-playground__https-warning {
 	align-items: center;

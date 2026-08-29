@@ -262,12 +262,28 @@ export const AUTH_SCHEMES = {
 export const DEFAULT_SCHEME = 'none';
 
 /**
+ * Whether an id names a real scheme.
+ *
+ * Uses an own-property check rather than `in`, which also answers true for
+ * inherited names — `constructor`, `toString` and friends. A stored profile
+ * typed `constructor` would otherwise pass validation and then resolve to
+ * Object's constructor, whose missing `fields` throws partway through
+ * hydration.
+ *
+ * @param {unknown} type - Candidate scheme id.
+ * @returns {boolean}
+ */
+export const hasScheme = (type) =>
+	typeof type === 'string' && Object.prototype.hasOwnProperty.call(AUTH_SCHEMES, type);
+
+/**
  * Look up a scheme, falling back to the cookie scheme for an unknown id.
  *
  * @param {string} type - Scheme id.
  * @returns {AuthScheme}
  */
-export const getScheme = (type) => AUTH_SCHEMES[type] ?? AUTH_SCHEMES[DEFAULT_SCHEME];
+export const getScheme = (type) =>
+	hasScheme(type) ? AUTH_SCHEMES[type] : AUTH_SCHEMES[DEFAULT_SCHEME];
 
 /**
  * Build the config a freshly created profile of this type starts with, so every

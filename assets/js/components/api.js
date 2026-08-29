@@ -4,7 +4,7 @@
 
 import { state } from './state';
 import { encodePathParam, hasTraversalSegment, substitutePathParams } from './utils';
-import { applyAuth, shouldSendWpCookie } from './auth';
+import { applyAuth, shouldSendWpCookie, validateActiveProfile } from './auth';
 import { pairsToObject } from './auth/schemes';
 import {
 	showResponseLoading,
@@ -112,6 +112,14 @@ export const buildRequest = () => {
 
 	const baseUrl = (window.wpRestPlayground?.restUrl ?? '').replace(/\/$/, '');
 	let url = baseUrl + routePath;
+
+	// Refuse before building rather than sending a half-formed credential. The
+	// profile has already dropped the login cookie by this point, so proceeding
+	// would produce a 401 whose cause is nowhere on screen.
+	const invalidAuth = validateActiveProfile();
+	if (invalidAuth) {
+		throw new RequestBuildError(`Authentication is incomplete — ${invalidAuth}`);
+	}
 
 	// Headers, in precedence order: defaults, then the credential, then the
 	// Headers tab — so an explicit entry there overrides either of the first two.

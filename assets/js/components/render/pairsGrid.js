@@ -87,6 +87,7 @@ export const renderPairsGrid = (rows, idPrefix, labels = {}) => {
 					<button
 						class="rest-playground__pair-remove"
 						type="button"
+						id="${safePrefix}-remove-${index}"
 						data-pair-field="remove"
 						${isBlank ? 'disabled' : ''}
 						aria-label="Remove this row"
@@ -202,8 +203,25 @@ export const bindPairsGrid = (container, onChange, rerender) => {
 			'[data-pair-field="remove"]',
 		);
 		if (!button) return;
-		button.closest('.rest-playground__pair-row')?.remove();
+
+		const row = button.closest('.rest-playground__pair-row');
+		const index = Number(row?.dataset.pairIndex ?? -1);
+
+		row?.remove();
 		onChange(readRows());
 		rerender();
+
+		// Deleting by keyboard destroys the focused button. Rows shift up, so the
+		// same index is now the row that followed; when the last real row goes,
+		// that index belongs to the disabled blank row and focus moves back one
+		// instead. Without this, Delete drops the user to the top of the document.
+		const prefix = grid.dataset.pairsPrefix ?? '';
+		const at = (i) =>
+			/** @type {HTMLButtonElement|null} */ (
+				container.ownerDocument.getElementById(`${prefix}-remove-${i}`)
+			);
+		const next = at(index);
+		const target = next && !next.disabled ? next : at(index - 1);
+		if (target && !target.disabled) target.focus();
 	});
 };

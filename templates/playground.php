@@ -138,6 +138,8 @@ JS;
 					<path d="M7 11V7a5 5 0 0110 0v4"/>
 				</svg>
 				<span class="rest-playground__auth-status" id="auth-status"><?php esc_html_e( 'Logged-in user', 'wp-rest-api-playground' ); ?></span>
+				<?php // The visible "Edit" is decorative and only appears on hover, so the purpose is spelled out for assistive technology instead. ?>
+				<span class="rest-playground__sr-only"><?php esc_html_e( '— edit authentication', 'wp-rest-api-playground' ); ?></span>
 				<span class="rest-playground__auth-chip-hint" aria-hidden="true"><?php esc_html_e( 'Edit', 'wp-rest-api-playground' ); ?></span>
 			</button>
 		</div>

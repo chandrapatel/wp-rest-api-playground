@@ -7,7 +7,7 @@
  */
 
 import { state } from '../state';
-import { defaultConfig, getScheme, AUTH_SCHEMES, DEFAULT_SCHEME } from './schemes';
+import { defaultConfig, getScheme, hasScheme, DEFAULT_SCHEME } from './schemes';
 
 const STORAGE_KEY = 'wp-rest-playground-auth-v2';
 
@@ -44,8 +44,8 @@ const newId = () => {
 const sanitizeProfile = (raw) => {
 	if (!raw || typeof raw !== 'object') return null;
 
-	const type = typeof raw.type === 'string' && raw.type in AUTH_SCHEMES ? raw.type : null;
-	if (!type) return null;
+	if (!hasScheme(raw.type)) return null;
+	const { type } = raw;
 
 	const config = defaultConfig(type);
 
@@ -148,8 +148,17 @@ export const loadAuth = () => {
 		const stored = sessionStorage.getItem(STORAGE_KEY);
 		if (stored) {
 			const parsed = JSON.parse(stored);
+			// Each entry is guarded on its own: one unusable row must not cost
+			// the user the rest of their profiles. A throw escaping here would
+			// be caught below, which discards the whole store.
 			profiles = (Array.isArray(parsed?.profiles) ? parsed.profiles : [])
-				.map(sanitizeProfile)
+				.map((raw) => {
+					try {
+						return sanitizeProfile(raw);
+					} catch {
+						return null;
+					}
+				})
 				.filter(Boolean);
 			activeProfileId =
 				typeof parsed?.activeProfileId === 'string' ? parsed.activeProfileId : null;
@@ -299,7 +308,7 @@ export const deleteProfile = () => {
  */
 export const setActiveType = (type) => {
 	const active = getActiveProfile();
-	if (!active || !(type in AUTH_SCHEMES)) return;
+	if (!active || !hasScheme(type)) return;
 	active.type = type;
 	active.config = defaultConfig(type);
 	persistAuth();
@@ -356,6 +365,24 @@ export const applyAuth = () => {
 	const active = getActiveProfile();
 	if (!active) return {};
 	return getScheme(active.type).apply(active.config) ?? {};
+};
+
+/**
+ * Why the active profile cannot be used yet, or null when it is usable.
+ *
+ * Kept separate from applyAuth() so the caller decides what an incomplete
+ * profile means: the panel previews it, the request builder refuses it. Without
+ * that refusal an empty Bearer profile sends `Authorization: Bearer ` and a
+ * half-filled application password sends `admin:` — both drop the login cookie
+ * on the way out, so the user gets an unexplained 401 while the Auth tab is
+ * quietly showing "Incomplete".
+ *
+ * @returns {string|null}
+ */
+export const validateActiveProfile = () => {
+	const active = getActiveProfile();
+	if (!active) return null;
+	return getScheme(active.type).validate?.(active.config) ?? null;
 };
 
 /**
