@@ -225,7 +225,14 @@ export const AUTH_SCHEMES = {
 				],
 			},
 		],
-		validate: (config) => (config.name?.trim() ? null : 'Enter a key name.'),
+		// The value matters as much as the name: a key profile with only a name
+		// filled in would send an empty header while still suppressing the login
+		// cookie, which reads as an unexplained authentication failure.
+		validate: (config) => {
+			if (!config.name?.trim()) return 'Enter a key name.';
+			if (!config.value) return 'Enter a key value.';
+			return null;
+		},
 		summary: (config) => config.name?.trim() || 'API key',
 		apply: (config) => {
 			const name = (config.name ?? '').trim();

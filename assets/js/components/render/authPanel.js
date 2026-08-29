@@ -147,14 +147,7 @@ const renderAuthField = (field, config) => {
  */
 const renderPreview = () => {
 	const active = getActiveProfile();
-	if (!active || active.type === 'none') {
-		return `
-			<div class="rest-playground__auth-preview">
-				<span class="rest-playground__auth-preview-label">Will send</span>
-				<code class="rest-playground__auth-preview-empty">Cookie + X-WP-Nonce (your current login)</code>
-			</div>
-		`;
-	}
+	if (!active) return '';
 
 	const scheme = getScheme(active.type);
 	const invalid = scheme.validate?.(active.config) ?? null;
@@ -178,6 +171,15 @@ const renderPreview = () => {
 				`?${escapeHtml(name)}=${escapeHtml(revealSecrets ? value : maskSecret(value))}`,
 		),
 	];
+
+	// Read from the same function the request builder uses, so the preview
+	// cannot claim a cookie the request will not send — as it did whenever the
+	// Headers tab supplied an Authorization row alongside the cookie profile.
+	if (shouldSendWpCookie()) {
+		lines.push('Cookie + X-WP-Nonce (your current login)');
+	} else if (!lines.length) {
+		lines.push('Authorization from the Headers tab — the login cookie is held back');
+	}
 
 	if (!lines.length) {
 		return `

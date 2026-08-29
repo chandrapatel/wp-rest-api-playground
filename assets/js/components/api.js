@@ -73,6 +73,7 @@ const FORBIDDEN_HEADERS = new Set([
 	'host',
 	'keep-alive',
 	'origin',
+	'permissions-policy',
 	'referer',
 	'set-cookie',
 	'te',
@@ -84,6 +85,21 @@ const FORBIDDEN_HEADERS = new Set([
 
 /** `Proxy-` and `Sec-` prefixed names are forbidden as a class. */
 const FORBIDDEN_HEADER_PREFIX = /^(proxy|sec)-/i;
+
+/**
+ * Method-override headers are forbidden only for certain values, so they are
+ * checked against the value rather than rejected outright — `X-HTTP-Method-
+ * Override: PATCH` is legitimate and widely used, while the CONNECT/TRACE/TRACK
+ * forms are dropped by the browser.
+ */
+const METHOD_OVERRIDE_HEADERS = new Set([
+	'x-http-method',
+	'x-http-method-override',
+	'x-method-override',
+]);
+
+/** Methods a page may not smuggle through an override header. */
+const FORBIDDEN_OVERRIDE_METHODS = new Set(['connect', 'trace', 'track']);
 
 /**
  * Merge headers into a target object, rejecting anything malformed.
@@ -112,6 +128,18 @@ const mergeHeaders = (target, source) => {
 					? 'Browsers do not let a page set the "Cookie" header. Use the Auth tab — the Logged-in User profile sends your session cookie with the request.'
 					: `Browsers do not let a page set the "${name}" header; it would be dropped before the request was sent.`,
 			);
+		}
+
+		if (METHOD_OVERRIDE_HEADERS.has(lowerName)) {
+			const smuggled = String(value)
+				.split(',')
+				.map((part) => part.trim().toLowerCase())
+				.find((part) => FORBIDDEN_OVERRIDE_METHODS.has(part));
+			if (smuggled) {
+				throw new RequestBuildError(
+					`Browsers reject "${name}" when it names ${smuggled.toUpperCase()}; the header would be dropped before the request was sent.`,
+				);
+			}
 		}
 
 		// Header names are case-insensitive, but object keys are not. Left alone,

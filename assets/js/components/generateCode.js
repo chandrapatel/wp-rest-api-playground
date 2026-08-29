@@ -82,6 +82,26 @@ export const redactSecrets = (url, options, meta = {}) => {
 };
 
 /**
+ * Header-name tests used by the generators.
+ *
+ * Case-insensitive because the Headers tab preserves whatever spelling the user
+ * typed: an exact-case check let a lowercase `x-wp-nonce` override slip into
+ * snippets that state they omit it.
+ *
+ * @param {string} key - Header name.
+ * @returns {boolean}
+ */
+const isNonceHeader = (key) => key.toLowerCase() === 'x-wp-nonce';
+
+/**
+ * Whether a header name is Content-Type, in any spelling.
+ *
+ * @param {string} key - Header name.
+ * @returns {boolean}
+ */
+const isContentTypeHeader = (key) => key.toLowerCase() === 'content-type';
+
+/**
  * Warn that a snippet cannot reproduce browser cookie authentication.
  *
  * curl and wp_remote_* run outside the browser, so neither carries the login
@@ -173,8 +193,7 @@ export const generateJsCode = (url, options) => {
 	// cookie-authenticated REST request arrives without one, so a snippet that
 	// kept the cookie but dropped the nonce would quietly run as nobody.
 	const usesCookie = credentials === 'same-origin' || credentials === 'include';
-	const isNonce = (key) => key.toLowerCase() === 'x-wp-nonce';
-	const sendsNonce = usesCookie && Object.keys(headers).some(isNonce);
+	const sendsNonce = usesCookie && Object.keys(headers).some(isNonceHeader);
 
 	let code = '';
 
@@ -216,7 +235,7 @@ export const generateJsCode = (url, options) => {
 	code += `        headers: {\n`;
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (isNonce(key) && !usesCookie) return;
+		if (isNonceHeader(key) && !usesCookie) return;
 		code += `            '${escapeForStr(key)}': '${escapeForStr(val)}',\n`;
 	});
 
@@ -272,8 +291,8 @@ export const generateCurlCode = (url, options) => {
 	parts.push(`  --url '${escapeForShell(url)}'`);
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
-		if (isGet && key === 'Content-Type') return;
+		if (isNonceHeader(key)) return;
+		if (isGet && isContentTypeHeader(key)) return;
 		parts.push(`  --header '${escapeForShell(key)}: ${escapeForShell(val)}'`);
 	});
 
@@ -338,7 +357,7 @@ export const generatePhpCode = (url, options) => {
 	code += `        'headers' => [\n`;
 
 	Object.entries(headers).forEach(([key, val]) => {
-		if (key === 'X-WP-Nonce') return;
+		if (isNonceHeader(key)) return;
 		code += `            '${escapeForStr(key)}' => '${escapeForStr(val)}',\n`;
 	});
 
