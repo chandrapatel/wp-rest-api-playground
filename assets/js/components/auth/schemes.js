@@ -31,14 +31,15 @@ export const utf8Base64 = (value) => {
 
 /**
  * Mask a secret for display, keeping a short tail so the user can tell two
- * saved credentials apart without revealing either.
+ * saved credentials apart without revealing either. Values under 8 characters
+ * are masked in full — a 4-character tail would be most of the secret.
  *
  * @param {string} value - The secret.
  * @returns {string}
  */
 export const maskSecret = (value) => {
 	if (!value) return '';
-	if (value.length <= 4) return '•'.repeat(value.length);
+	if (value.length < 8) return '•'.repeat(value.length);
 	return `${'•'.repeat(Math.min(value.length - 4, 24))}${value.slice(-4)}`;
 };
 

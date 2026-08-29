@@ -87,7 +87,9 @@ const renderAuthField = (field, config) => {
 		// Always a password input: masking has to come from the control itself,
 		// since a CSS-masked textarea would leave the value readable wherever
 		// -webkit-text-security is unsupported while the button still claimed it
-		// was hidden.
+		// was hidden. autocomplete="new-password" rather than "off" — browsers
+		// ignore "off" on password fields and would offer to save an application
+		// password into the password manager against the site origin.
 		control = `
 			<div class="rest-playground__secret-row">
 				<input
@@ -97,7 +99,7 @@ const renderAuthField = (field, config) => {
 					data-auth-key="${escapeHtml(field.key)}"
 					value="${escapeHtml(value)}"
 					spellcheck="false"
-					autocomplete="off"
+					autocomplete="new-password"
 					placeholder="${escapeHtml(field.placeholder ?? '')}"
 				>
 				<button

@@ -21,7 +21,9 @@ export const state = {
 	auth: { activeProfileId: null, profiles: [], sendWpCookie: false },
 	/**
 	 * Rows of the Headers tab. Kept out of `auth` because they apply to every
-	 * request regardless of which credential is selected.
+	 * request regardless of which credential is selected, but hydrated from and
+	 * persisted to the same sessionStorage entry by components/auth — a row here
+	 * can carry a credential just as a profile can.
 	 *
 	 * @type {Array<{enabled: boolean, name: string, value: string}>}
 	 */

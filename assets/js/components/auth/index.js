@@ -32,6 +32,24 @@ const newId = () => {
 };
 
 /**
+ * Reduce a stored pairs list to well-formed rows, dropping anything else.
+ * Rows left entirely blank are dropped too — the grid re-adds its own blank
+ * trailing row, so a stored one only ever came from a malformed entry.
+ *
+ * @param {unknown} value - Candidate row list from storage.
+ * @returns {Array<{enabled: boolean, name: string, value: string}>}
+ */
+const sanitizeRows = (value) =>
+	(Array.isArray(value) ? value : [])
+		.filter((row) => row && typeof row === 'object')
+		.map((row) => ({
+			enabled: row.enabled !== false,
+			name: typeof row.name === 'string' ? row.name : '',
+			value: typeof row.value === 'string' ? row.value : '',
+		}))
+		.filter((row) => row.name || row.value);
+
+/**
  * Reduce a stored profile to only what its scheme declares.
  *
  * Unknown scheme ids and config keys the scheme does not define are dropped, so
@@ -53,13 +71,7 @@ const sanitizeProfile = (raw) => {
 		const value = raw.config?.[field.key];
 		if (field.type === 'pairs') {
 			if (!Array.isArray(value)) return;
-			config[field.key] = value
-				.filter((row) => row && typeof row === 'object')
-				.map((row) => ({
-					enabled: row.enabled !== false,
-					name: typeof row.name === 'string' ? row.name : '',
-					value: typeof row.value === 'string' ? row.value : '',
-				}));
+			config[field.key] = sanitizeRows(value);
 		} else if (typeof value === 'string') {
 			config[field.key] = value;
 		}
@@ -116,9 +128,15 @@ const migrateLegacy = () => {
 };
 
 /**
- * Persist the current profiles. Failures are ignored — storage can be full,
- * disabled, or blocked in private mode, and none of that should break a request
- * the user is in the middle of building.
+ * Persist the current profiles and Headers-tab rows. Failures are ignored —
+ * storage can be full, disabled, or blocked in private mode, and none of that
+ * should break a request the user is in the middle of building.
+ *
+ * The Headers-tab rows ride in the same entry as the profiles: a row there can
+ * carry a credential just as a profile can, so it gets the same tab-scoped
+ * storage and the same lifetime. Losing only the rows on reload also silently
+ * changed behaviour — a custom Authorization row suppresses the login cookie,
+ * and that suppression vanished while the persisted profile survived.
  */
 export const persistAuth = () => {
 	try {
@@ -128,6 +146,7 @@ export const persistAuth = () => {
 				activeProfileId: state.auth.activeProfileId,
 				sendWpCookie: state.auth.sendWpCookie,
 				profiles: state.auth.profiles,
+				customHeaders: state.customHeaders,
 			}),
 		);
 	} catch {
@@ -143,6 +162,7 @@ export const loadAuth = () => {
 	let profiles = [];
 	let activeProfileId = null;
 	let sendWpCookie = false;
+	let customHeaders = [];
 
 	try {
 		const stored = sessionStorage.getItem(STORAGE_KEY);
@@ -163,6 +183,7 @@ export const loadAuth = () => {
 			activeProfileId =
 				typeof parsed?.activeProfileId === 'string' ? parsed.activeProfileId : null;
 			sendWpCookie = parsed?.sendWpCookie === true;
+			customHeaders = sanitizeRows(parsed?.customHeaders);
 		}
 	} catch {
 		try {
@@ -197,6 +218,7 @@ export const loadAuth = () => {
 	}
 
 	state.auth = { activeProfileId, profiles, sendWpCookie };
+	state.customHeaders = customHeaders;
 
 	// Write straight back. Hydration is not always a no-op: migrating the pre-v2
 	// key removes it, and the fallback profile above may have just been created.
@@ -324,6 +346,16 @@ export const updateActiveConfig = (key, value) => {
 	const active = getActiveProfile();
 	if (!active) return;
 	active.config[key] = value;
+	persistAuth();
+};
+
+/**
+ * Replace the Headers-tab rows and persist them beside the profiles.
+ *
+ * @param {Array<{enabled: boolean, name: string, value: string}>} rows - Grid rows.
+ */
+export const setCustomHeaders = (rows) => {
+	state.customHeaders = sanitizeRows(rows);
 	persistAuth();
 };
 

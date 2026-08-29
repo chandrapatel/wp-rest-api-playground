@@ -22,6 +22,18 @@ const escapeForStr = (str) => str.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
 const escapeForShell = (str) => str.replace(/'/g, "'\\''");
 
 /**
+ * Escape a value for embedding inside a JavaScript template literal, where a
+ * backtick or `${` opens interpolation that single-quote escaping cannot cover.
+ * Every URL reaching this is built from percent-encoded components, so this is
+ * defence in depth for the context rather than a live hole.
+ *
+ * @param {string} str - The string to escape.
+ * @returns {string} The escaped string.
+ */
+const escapeForTemplate = (str) =>
+	str.replace(/\\/g, '\\\\').replace(/`/g, '\\`').replace(/\$\{/g, '\\${');
+
+/**
  * Choose the placeholder that stands in for a redacted credential.
  *
  * Keeping the scheme word makes the snippet self-documenting — a reader can see
@@ -112,16 +124,22 @@ const isContentTypeHeader = (key) => key.toLowerCase() === 'content-type';
  * @param {string|undefined} credentials - The fetch credentials mode used.
  * @param {string} commentToken - Line-comment prefix for the target language.
  * @param {Record<string,string>} [headers] - Request headers, checked for a credential.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
  * @returns {string} Comment block, or an empty string when not applicable.
  */
-const cookieCaveat = (credentials, commentToken, headers = {}) => {
+const cookieCaveat = (credentials, commentToken, headers = {}, meta = {}) => {
 	if (credentials !== 'same-origin' && credentials !== 'include') return '';
 
-	// With an Authorization header the snippet still carries a working
-	// credential, so it is runnable and the warning would be simply wrong. This
-	// happens whenever "Also send WordPress cookie + nonce" is ticked alongside
-	// a real profile — the cookie is the part that is lost, not the auth.
-	const hasCredential = Object.keys(headers).some((key) => key.toLowerCase() === 'authorization');
+	// With a credential still in the snippet it remains runnable and the warning
+	// would be simply wrong. This happens whenever "Also send WordPress cookie +
+	// nonce" is ticked alongside a real profile — the cookie is the part that is
+	// lost, not the auth. Checked via meta as well as the Authorization header,
+	// because an API key rides in a header of its own naming or in the query
+	// string, where a name-based check cannot see it.
+	const hasCredential =
+		Object.keys(headers).some((key) => key.toLowerCase() === 'authorization') ||
+		(meta.secretHeaders?.length ?? 0) > 0 ||
+		(meta.secretQuery?.length ?? 0) > 0;
 	if (hasCredential) return '';
 
 	return (
@@ -234,7 +252,7 @@ export const generateJsCode = (url, options) => {
 	}
 
 	const fetchUrl = hasQueryParams
-		? `\`${escapeForStr(base)}?\${ params }\``
+		? `\`${escapeForTemplate(base)}?\${ params }\``
 		: `'${escapeForStr(url)}'`;
 
 	code += `const response = await fetch(\n`;
@@ -284,9 +302,10 @@ export const generateJsCode = (url, options) => {
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
  * @returns {string}
  */
-export const generateCurlCode = (url, options) => {
+export const generateCurlCode = (url, options, meta = {}) => {
 	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 
@@ -314,7 +333,7 @@ export const generateCurlCode = (url, options) => {
 		}
 	}
 
-	return cookieCaveat(credentials, '#', headers) + parts.join(' \\\n');
+	return cookieCaveat(credentials, '#', headers, meta) + parts.join(' \\\n');
 };
 
 /**
@@ -329,9 +348,10 @@ export const generateCurlCode = (url, options) => {
  *
  * @param {string} url                                                            - The request URL.
  * @param {{ method: string, headers: Record<string,string>, body?: string }} options - Fetch options.
+ * @param {{ secretHeaders?: string[], secretQuery?: string[] }} [meta] - Which keys hold secrets.
  * @returns {string}
  */
-export const generatePhpCode = (url, options) => {
+export const generatePhpCode = (url, options, meta = {}) => {
 	const { method, headers, body, credentials } = options;
 	const isGet = method === 'GET';
 	const isPost = method === 'POST';
@@ -342,7 +362,7 @@ export const generatePhpCode = (url, options) => {
 	const fnName = isGet ? 'wp_remote_get' : 'wp_remote_post';
 	const baseUrl = isGet ? base : url;
 
-	let code = cookieCaveat(credentials, '//', headers);
+	let code = cookieCaveat(credentials, '//', headers, meta);
 
 	// POST/PUT/PATCH: $params variable.
 	if (isBodyMethod && body) {

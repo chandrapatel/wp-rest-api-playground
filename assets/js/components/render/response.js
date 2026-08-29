@@ -101,8 +101,8 @@ const buildCodePanesHtml = (url, options, meta = {}) => {
 	const source = redactCode ? redactSecrets(url, options, meta) : { url, options };
 
 	const jsCode = generateJsCode(source.url, source.options);
-	const phpCode = generatePhpCode(source.url, source.options);
-	const curlCode = generateCurlCode(source.url, source.options);
+	const phpCode = generatePhpCode(source.url, source.options, meta);
+	const curlCode = generateCurlCode(source.url, source.options, meta);
 
 	const langs = [
 		['js', 'JavaScript', jsCode],

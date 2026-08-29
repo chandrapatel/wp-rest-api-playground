@@ -6,6 +6,7 @@
  */
 
 import { state } from '../state';
+import { setCustomHeaders } from '../auth';
 import { renderPairsGrid, bindPairsGrid } from './pairsGrid';
 
 /** Called after an edit so the tab badge can refresh. */
@@ -34,7 +35,8 @@ export const renderHeadersPanel = () => {
 				so naming the same header here replaces the one it would have sent — matching is
 				case-insensitive. <code>Content-Type: application/json</code> is added automatically
 				and can be overridden the same way; <code>X-WP-Nonce</code> is added only for
-				profiles that authenticate by your login cookie.
+				profiles that authenticate by your login cookie. Like credential profiles,
+				these rows live in this browser tab only.
 			</p>
 			${renderPairsGrid(state.customHeaders, 'custom-header')}
 		</div>
@@ -43,7 +45,7 @@ export const renderHeadersPanel = () => {
 	bindPairsGrid(
 		pane,
 		(rows) => {
-			state.customHeaders = rows;
+			setCustomHeaders(rows);
 			onHeadersChanged();
 		},
 		renderHeadersPanel,
